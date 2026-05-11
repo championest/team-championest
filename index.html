@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Team Championest</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    * { font-family: 'Inter', sans-serif; }
+    .card-glow { box-shadow: 0 0 20px rgba(99,102,241,0.15); }
+    .note-pulse { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+
+<!-- PIN Screen -->
+<div id="pin-screen" class="fixed inset-0 bg-gray-950 flex items-center justify-center z-50">
+  <div class="text-center space-y-6 px-8 w-full max-w-sm">
+    <div class="text-4xl font-bold text-indigo-400">⚡ Championest</div>
+    <p class="text-gray-400 text-sm">Enter PIN to continue</p>
+    <input id="pin-input" type="password" inputmode="numeric" maxlength="6"
+      class="w-full text-center text-2xl tracking-widest bg-gray-800 border border-gray-700 rounded-xl px-4 py-4 focus:outline-none focus:border-indigo-500"
+      placeholder="••••" autofocus>
+    <button onclick="checkPin()"
+      class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition">
+      Enter
+    </button>
+    <p id="pin-error" class="text-red-400 text-sm hidden">PIN ไม่ถูก</p>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="app" class="hidden max-w-2xl mx-auto px-4 py-8 space-y-8">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-white">⚡ Team Championest</h1>
+      <p class="text-gray-500 text-sm mt-0.5">AI team — always ready</p>
+    </div>
+    <button onclick="openAddMember()"
+      class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+      + Add member
+    </button>
+  </div>
+
+  <!-- Team Grid -->
+  <section>
+    <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Team</h2>
+    <div id="team-grid" class="space-y-3">
+      <div class="text-gray-600 text-sm">Loading...</div>
+    </div>
+  </section>
+
+  <!-- Notes to Claude -->
+  <section>
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">Notes to Claude</h2>
+      <span id="unread-badge" class="hidden bg-indigo-600 text-white text-xs font-bold px-2 py-0.5 rounded-full note-pulse"></span>
+    </div>
+
+    <!-- Add Note -->
+    <div class="bg-gray-800 rounded-xl p-4 space-y-3 mb-3">
+      <textarea id="note-input" rows="3"
+        class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500 resize-none"
+        placeholder="โน้ตถึง Claude... เช่น อยากเพิ่ม feature X, ปัญหา Y ที่เจอ, idea Z"></textarea>
+      <div class="flex gap-2">
+        <select id="note-priority"
+          class="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none">
+          <option value="normal">Normal</option>
+          <option value="urgent">🔴 Urgent</option>
+          <option value="idea">💡 Idea</option>
+          <option value="bug">🐛 Bug</option>
+        </select>
+        <button onclick="addNote()"
+          class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+          Save Note
+        </button>
+      </div>
+    </div>
+
+    <!-- Notes List -->
+    <div id="notes-list" class="space-y-2">
+      <div class="text-gray-600 text-sm">Loading notes...</div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <div class="text-center text-gray-700 text-xs pb-4">
+    Team Championest · Claude Code Dashboard
+  </div>
+</div>
+
+<!-- Member Modal -->
+<div id="member-modal" class="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-40 hidden px-0 sm:px-4">
+  <div class="bg-gray-800 w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between">
+      <h3 id="modal-title" class="text-lg font-semibold">Edit Member</h3>
+      <button onclick="closeModal()" class="text-gray-500 hover:text-gray-300 text-2xl leading-none">&times;</button>
+    </div>
+    <input id="m-id" type="hidden">
+    <div class="space-y-3">
+      <div>
+        <label class="text-xs text-gray-400 mb-1 block">Name</label>
+        <input id="m-name" type="text" class="input-field" placeholder="Kai">
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 mb-1 block">Role</label>
+        <input id="m-role" type="text" class="input-field" placeholder="Dev">
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 mb-1 block">Color (tailwind color name)</label>
+        <select id="m-color" class="input-field">
+          <option value="indigo">Indigo</option>
+          <option value="violet">Violet</option>
+          <option value="emerald">Emerald</option>
+          <option value="rose">Rose</option>
+          <option value="amber">Amber</option>
+          <option value="sky">Sky</option>
+          <option value="pink">Pink</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 mb-1 block">Scope</label>
+        <textarea id="m-scope" rows="2" class="input-field" placeholder="Feature building, debugging, deploy..."></textarea>
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 mb-1 block">Speaking Style</label>
+        <textarea id="m-style" rows="2" class="input-field" placeholder="Ultra terse. Results only..."></textarea>
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 mb-1 block">Example response</label>
+        <textarea id="m-example" rows="2" class="input-field" placeholder='"Done. app/page.tsx:42"'></textarea>
+      </div>
+    </div>
+    <div class="flex gap-3 pt-2">
+      <button id="delete-btn" onclick="deleteMember()" class="px-4 py-2 bg-red-900/50 hover:bg-red-800 text-red-400 text-sm font-medium rounded-lg transition hidden">Delete</button>
+      <div class="flex-1"></div>
+      <button onclick="closeModal()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm font-medium rounded-lg transition">Cancel</button>
+      <button onclick="saveMember()" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-lg transition">Save</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .input-field {
+    width: 100%;
+    background: rgb(17,24,39);
+    border: 1px solid rgb(55,65,81);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: rgb(243,244,246);
+    outline: none;
+    transition: border-color 0.15s;
+    resize: vertical;
+  }
+  .input-field:focus { border-color: rgb(99,102,241); }
+</style>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc, addDoc, query, orderBy, onSnapshot, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAKxWv3FI7HrdrRlnJhsQbJ-97Pb_sdiOQ",
+  authDomain: "up-level-guild.firebaseapp.com",
+  projectId: "up-level-guild",
+  storageBucket: "up-level-guild.firebasestorage.app",
+  messagingSenderId: "721710985300",
+  appId: "1:721710985300:web:c51e13963373a6feadbdc1"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ─── PIN ───────────────────────────────────────────────
+const CORRECT_PIN = "7777"; // change me
+
+window.checkPin = function() {
+  const val = document.getElementById('pin-input').value;
+  if (val === CORRECT_PIN || localStorage.getItem('champ-auth') === '1') {
+    localStorage.setItem('champ-auth', '1');
+    document.getElementById('pin-screen').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    init();
+  } else {
+    document.getElementById('pin-error').classList.remove('hidden');
+    document.getElementById('pin-input').value = '';
+  }
+}
+
+document.getElementById('pin-input').addEventListener('keydown', e => { if (e.key === 'Enter') window.checkPin(); });
+
+if (localStorage.getItem('champ-auth') === '1') {
+  document.getElementById('pin-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  init();
+}
+
+// ─── Color map ─────────────────────────────────────────
+const colorMap = {
+  indigo: { bg: 'bg-indigo-900/40', border: 'border-indigo-700/50', text: 'text-indigo-400', dot: 'bg-indigo-500' },
+  violet: { bg: 'bg-violet-900/40', border: 'border-violet-700/50', text: 'text-violet-400', dot: 'bg-violet-500' },
+  emerald: { bg: 'bg-emerald-900/40', border: 'border-emerald-700/50', text: 'text-emerald-400', dot: 'bg-emerald-500' },
+  rose:    { bg: 'bg-rose-900/40',    border: 'border-rose-700/50',    text: 'text-rose-400',    dot: 'bg-rose-500' },
+  amber:   { bg: 'bg-amber-900/40',   border: 'border-amber-700/50',   text: 'text-amber-400',   dot: 'bg-amber-500' },
+  sky:     { bg: 'bg-sky-900/40',     border: 'border-sky-700/50',     text: 'text-sky-400',     dot: 'bg-sky-500' },
+  pink:    { bg: 'bg-pink-900/40',    border: 'border-pink-700/50',    text: 'text-pink-400',    dot: 'bg-pink-500' },
+};
+
+// ─── Default team ──────────────────────────────────────
+const DEFAULT_MEMBERS = [
+  { id: 'ace',  name: 'Ace',  role: 'Chief of Staff', color: 'sky',    scope: 'Orchestration, strategy, diagnosis, delegation — คุยก่อนเมื่อไม่รู้จะทำอะไร', style: 'Calm authority. Asks one sharp question. Diagnoses, then directs.', example: '"โปรเจคไหนก่อน?" / "ชัดแล้ว — Kai จัดการ, Nova เตรียม post"', order: 0 },
+  { id: 'kai',  name: 'Kai',  role: 'Dev',            color: 'indigo', scope: 'Feature building, debugging, refactoring, deploy, code review', style: 'Ultra terse. Results only. No explanation.', example: '"Done. app/page.tsx:42 — auth guard added."', order: 1 },
+  { id: 'nova', name: 'Nova', role: 'Content',        color: 'violet', scope: 'Social media posts, video scripts, voiceovers, marketing copy', style: 'Creative, energetic. Offers 2–3 options.', example: '"3 options: [A] hook-first / [B] story / [C] problem-led."', order: 2 },
+  { id: 'sam',  name: 'Sam',  role: 'Research',       color: 'emerald', scope: 'Tech research, library comparison, market research, solution scouting', style: 'Structured, analytical. Numbered findings + recommendation.', example: '"3 approaches: 1. X 2. Y → Recommend: Z"', order: 3 },
+  { id: 'jade', name: 'Jade', role: 'QA',             color: 'rose',   scope: 'Code review, security audit, bug verification, pre-deploy check', style: 'Skeptical, precise. Severity-labeled issues.', example: '"[Critical] X. [Warning] Y. [Minor] Z."', order: 4 },
+  { id: 'iris', name: 'Iris', role: 'Brain',          color: 'amber',  scope: 'Memory updates, Second Brain vault, decisions log, session summaries', style: 'Organized, confirmatory. Reports what was saved.', example: '"Updated: Projects/Up Level Guild.md · Decisions/Index.md"', order: 5 },
+];
+
+// ─── Init ──────────────────────────────────────────────
+async function init() {
+  await seedIfEmpty();
+  loadTeam();
+  loadNotes();
+}
+
+async function seedIfEmpty() {
+  const snap = await getDocs(collection(db, 'team-config'));
+  if (snap.empty) {
+    for (const m of DEFAULT_MEMBERS) {
+      await setDoc(doc(db, 'team-config', m.id), m);
+    }
+  }
+}
+
+// ─── Team ──────────────────────────────────────────────
+function loadTeam() {
+  const q = query(collection(db, 'team-config'), orderBy('order'));
+  onSnapshot(q, snap => {
+    const grid = document.getElementById('team-grid');
+    if (snap.empty) { grid.innerHTML = '<p class="text-gray-600 text-sm">No members yet.</p>'; return; }
+    grid.innerHTML = snap.docs.map(d => memberCard(d.id, d.data())).join('');
+  });
+}
+
+function memberCard(id, m) {
+  const c = colorMap[m.color] || colorMap.indigo;
+  return `
+    <div onclick="openEditMember('${id}')" class="cursor-pointer ${c.bg} border ${c.border} rounded-xl p-4 flex items-start gap-4 hover:border-opacity-100 transition card-glow">
+      <div class="w-10 h-10 rounded-full ${c.dot} flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+        ${m.name[0]}
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+          <span class="font-semibold text-white">${m.name}</span>
+          <span class="text-xs ${c.text} font-medium bg-gray-900/60 px-2 py-0.5 rounded-full">${m.role}</span>
+        </div>
+        <p class="text-gray-400 text-sm mt-0.5 truncate">${m.scope || ''}</p>
+        <p class="text-gray-600 text-xs mt-1 italic truncate">${m.example || ''}</p>
+      </div>
+      <div class="text-gray-600 text-xs">✏️</div>
+    </div>`;
+}
+
+// ─── Member Modal ──────────────────────────────────────
+window.openEditMember = function(id) {
+  onSnapshot(doc(db, 'team-config', id), snap => {
+    const m = snap.data();
+    document.getElementById('m-id').value = id;
+    document.getElementById('m-name').value = m.name || '';
+    document.getElementById('m-role').value = m.role || '';
+    document.getElementById('m-color').value = m.color || 'indigo';
+    document.getElementById('m-scope').value = m.scope || '';
+    document.getElementById('m-style').value = m.style || '';
+    document.getElementById('m-example').value = m.example || '';
+    document.getElementById('modal-title').textContent = `Edit — ${m.name}`;
+    document.getElementById('delete-btn').classList.remove('hidden');
+    document.getElementById('member-modal').classList.remove('hidden');
+  }, { source: 'cache' });
+  // get fresh data
+  getDocs(collection(db, 'team-config')).then(snap => {
+    const d = snap.docs.find(d => d.id === id);
+    if (!d) return;
+    const m = d.data();
+    document.getElementById('m-id').value = id;
+    document.getElementById('m-name').value = m.name || '';
+    document.getElementById('m-role').value = m.role || '';
+    document.getElementById('m-color').value = m.color || 'indigo';
+    document.getElementById('m-scope').value = m.scope || '';
+    document.getElementById('m-style').value = m.style || '';
+    document.getElementById('m-example').value = m.example || '';
+    document.getElementById('modal-title').textContent = `Edit — ${m.name}`;
+    document.getElementById('delete-btn').classList.remove('hidden');
+    document.getElementById('member-modal').classList.remove('hidden');
+  });
+}
+
+window.openAddMember = function() {
+  ['m-id','m-name','m-role','m-scope','m-style','m-example'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('m-color').value = 'sky';
+  document.getElementById('modal-title').textContent = 'Add Member';
+  document.getElementById('delete-btn').classList.add('hidden');
+  document.getElementById('member-modal').classList.remove('hidden');
+}
+
+window.closeModal = function() {
+  document.getElementById('member-modal').classList.add('hidden');
+}
+
+window.saveMember = async function() {
+  const id = document.getElementById('m-id').value || document.getElementById('m-name').value.toLowerCase().replace(/\s+/g,'-');
+  const data = {
+    name: document.getElementById('m-name').value,
+    role: document.getElementById('m-role').value,
+    color: document.getElementById('m-color').value,
+    scope: document.getElementById('m-scope').value,
+    style: document.getElementById('m-style').value,
+    example: document.getElementById('m-example').value,
+    order: Date.now(),
+  };
+  await setDoc(doc(db, 'team-config', id), data, { merge: true });
+  closeModal();
+}
+
+window.deleteMember = async function() {
+  const id = document.getElementById('m-id').value;
+  if (!id || !confirm(`Remove ${document.getElementById('m-name').value}?`)) return;
+  await deleteDoc(doc(db, 'team-config', id));
+  closeModal();
+}
+
+// ─── Notes ─────────────────────────────────────────────
+function loadNotes() {
+  const q = query(collection(db, 'claude-notes'), orderBy('timestamp', 'desc'));
+  onSnapshot(q, snap => {
+    const list = document.getElementById('notes-list');
+    const badge = document.getElementById('unread-badge');
+    const unread = snap.docs.filter(d => !d.data().read).length;
+
+    if (unread > 0) {
+      badge.textContent = unread + ' unread';
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+
+    if (snap.empty) {
+      list.innerHTML = '<p class="text-gray-600 text-sm">ยังไม่มีโน้ต</p>';
+      return;
+    }
+
+    list.innerHTML = snap.docs.map(d => noteCard(d.id, d.data())).join('');
+  });
+}
+
+const priorityLabel = { normal: '', urgent: '🔴', idea: '💡', bug: '🐛' };
+
+function noteCard(id, n) {
+  const time = n.timestamp?.toDate ? n.timestamp.toDate().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : '';
+  const readClass = n.read ? 'opacity-50' : '';
+  return `
+    <div class="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4 ${readClass}">
+      <div class="flex items-start gap-3">
+        <div class="flex-1">
+          ${n.priority && n.priority !== 'normal' ? `<span class="text-xs mr-1">${priorityLabel[n.priority]||''}</span>` : ''}
+          <span class="text-sm text-gray-200 whitespace-pre-wrap">${escHtml(n.text)}</span>
+          <div class="text-gray-600 text-xs mt-2">${time}</div>
+        </div>
+        <div class="flex gap-2 flex-shrink-0">
+          ${!n.read ? `<button onclick="markRead('${id}')" class="text-xs text-indigo-400 hover:text-indigo-300 transition">✓ Read</button>` : '<span class="text-xs text-gray-600">✓</span>'}
+          <button onclick="deleteNote('${id}')" class="text-xs text-gray-600 hover:text-red-400 transition">✕</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function escHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+window.addNote = async function() {
+  const text = document.getElementById('note-input').value.trim();
+  const priority = document.getElementById('note-priority').value;
+  if (!text) return;
+  await addDoc(collection(db, 'claude-notes'), { text, priority, read: false, timestamp: serverTimestamp() });
+  document.getElementById('note-input').value = '';
+}
+
+window.markRead = async function(id) {
+  await updateDoc(doc(db, 'claude-notes', id), { read: true });
+}
+
+window.deleteNote = async function(id) {
+  await deleteDoc(doc(db, 'claude-notes', id));
+}
+</script>
+</body>
+</html>
