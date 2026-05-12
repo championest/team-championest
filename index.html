@@ -5,12 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Team Championest</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     * { font-family: 'Inter', sans-serif; }
     .card-glow { box-shadow: 0 0 20px rgba(99,102,241,0.15); }
     .note-pulse { animation: pulse 2s infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+    .tab-active { background: rgb(55,65,81); color: white; }
+    .mermaid svg { max-width: 100%; height: auto; }
   </style>
 </head>
 <body class="bg-gray-950 text-gray-100 min-h-screen">
@@ -32,7 +35,7 @@
 </div>
 
 <!-- Main App -->
-<div id="app" class="hidden max-w-2xl mx-auto px-4 py-8 space-y-8">
+<div id="app" class="hidden max-w-2xl mx-auto px-4 py-8 space-y-6">
 
   <!-- Header -->
   <div class="flex items-center justify-between">
@@ -41,34 +44,119 @@
       <p class="text-gray-500 text-sm mt-0.5">AI team — always ready</p>
     </div>
     <div class="flex gap-2">
-      <button onclick="syncDefaults()"
+      <button id="sync-btn" onclick="syncDefaults()"
         class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm font-medium px-3 py-2 rounded-lg transition" title="Reset team to CLAUDE.md defaults">
         ↺ Sync
       </button>
-      <button onclick="openAddMember()"
+      <button id="add-btn" onclick="openAddMember()"
         class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
         + Add
       </button>
     </div>
   </div>
 
-  <!-- Team Grid -->
-  <section>
-    <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Team</h2>
+  <!-- Tab Navigation -->
+  <div class="flex gap-1 bg-gray-900 rounded-xl p-1">
+    <button onclick="switchTab('team')" id="tab-btn-team"
+      class="flex-1 py-2 text-sm font-medium rounded-lg transition tab-active">
+      👥 Team
+    </button>
+    <button onclick="switchTab('workflow')" id="tab-btn-workflow"
+      class="flex-1 py-2 text-sm font-medium rounded-lg transition text-gray-400 hover:text-gray-200">
+      🔀 Workflow
+    </button>
+    <button onclick="switchTab('notes')" id="tab-btn-notes"
+      class="flex-1 py-2 text-sm font-medium rounded-lg transition text-gray-400 hover:text-gray-200 flex items-center justify-center gap-1">
+      📝 Notes
+      <span id="unread-badge" class="hidden bg-indigo-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full note-pulse"></span>
+    </button>
+  </div>
+
+  <!-- ── TEAM TAB ───────────────────────────────────────── -->
+  <div id="tab-team" class="space-y-3">
     <div id="team-grid" class="space-y-3">
       <div class="text-gray-600 text-sm">Loading...</div>
     </div>
-  </section>
+  </div>
 
-  <!-- Notes to Claude -->
-  <section>
-    <div class="flex items-center justify-between mb-3">
-      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">Notes to Claude</h2>
-      <span id="unread-badge" class="hidden bg-indigo-600 text-white text-xs font-bold px-2 py-0.5 rounded-full note-pulse"></span>
+  <!-- ── WORKFLOW TAB ──────────────────────────────────── -->
+  <div id="tab-workflow" class="hidden space-y-6">
+
+    <!-- Flow Diagram -->
+    <div class="bg-gray-900 rounded-xl p-4">
+      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4">Team Flow</h2>
+      <div class="overflow-x-auto">
+        <div class="mermaid" id="workflow-diagram">
+flowchart TD
+    CHAMP(["👤 Champ"]) --> ACE["⭐ Ace\nDiagnose & Delegate"]
+
+    ACE -->|Dev/UI| SAM["🔍 Sam\nResearch"]
+    ACE -->|Dev/UI| PIXEL["🎨 Pixel\nDesign"]
+    ACE -->|Content| RENA["👥 Rena\nCustomer Insight"]
+    ACE -->|Tools| BOLT["🔧 Bolt\nTools & Auto"]
+    ACE -->|Admin| VERA["📋 Vera\nAdmin"]
+
+    SAM -->|"parallel ↘"| KAI["💻 Kai\nBuild"]
+    PIXEL -->|"parallel ↗"| KAI
+
+    RENA --> CONTENT["✍️ Nova / 📐 Max / 🎓 Sage\nContent Team"]
+
+    KAI --> JADE{"🔍 Jade\nQA Gate"}
+    JADE -->|"✅ Pass"| DEPLOY(["🚀 Deploy"])
+    JADE -->|"❌ Fail"| KAI
+
+    DEPLOY --> FLUX["📊 Flux\nLog Session"]
+    FLUX --> IRIS["🧠 Iris\nUpdate Vault"]
+
+    style CHAMP fill:#374151,stroke:#9ca3af,color:#e5e7eb
+    style ACE fill:#0c4a6e,stroke:#38bdf8,color:#e0f2fe
+    style KAI fill:#1e1b4b,stroke:#6366f1,color:#e0e7ff
+    style JADE fill:#4c0519,stroke:#f43f5e,color:#ffe4e6
+    style DEPLOY fill:#052e16,stroke:#22c55e,color:#dcfce7
+    style FLUX fill:#1c1917,stroke:#a8a29e,color:#e7e5e4
+    style IRIS fill:#451a03,stroke:#f59e0b,color:#fef3c7
+        </div>
+      </div>
     </div>
 
-    <!-- Add Note -->
-    <div class="bg-gray-800 rounded-xl p-4 space-y-3 mb-3">
+    <!-- Workflow Rules Summary -->
+    <div class="bg-gray-900 rounded-xl p-4 space-y-2">
+      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Active Rules</h2>
+      <div class="flex items-start gap-2 text-sm">
+        <span class="text-indigo-400 font-bold flex-shrink-0">1</span>
+        <span class="text-gray-300">Sam + Pixel run <span class="text-white font-medium">in parallel</span> — Kai waits for both</span>
+      </div>
+      <div class="flex items-start gap-2 text-sm">
+        <span class="text-indigo-400 font-bold flex-shrink-0">2</span>
+        <span class="text-gray-300">Rena insight → required <span class="text-white font-medium">before</span> Nova / Max / Sage create content</span>
+      </div>
+      <div class="flex items-start gap-2 text-sm">
+        <span class="text-indigo-400 font-bold flex-shrink-0">3</span>
+        <span class="text-gray-300">Every session ends: <span class="text-white font-medium">Flux log → Iris vault update</span> (mandatory)</span>
+      </div>
+      <div class="flex items-start gap-2 text-sm">
+        <span class="text-rose-400 font-bold flex-shrink-0">!</span>
+        <span class="text-gray-300">Jade gate is <span class="text-rose-400 font-medium">mandatory</span> before any deploy — no exceptions</span>
+      </div>
+    </div>
+
+    <!-- Live Activity Feed -->
+    <div>
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">Live Activity</h2>
+        <div id="activity-status" class="flex items-center gap-1.5 text-xs text-gray-600">
+          <span class="w-1.5 h-1.5 rounded-full bg-gray-600"></span> connecting...
+        </div>
+      </div>
+      <div id="activity-feed" class="space-y-2">
+        <p class="text-gray-600 text-sm">No activity yet. Flux will log here each session.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── NOTES TAB ─────────────────────────────────────── -->
+  <div id="tab-notes" class="hidden space-y-4">
+    <div class="bg-gray-800 rounded-xl p-4 space-y-3">
       <textarea id="note-input" rows="3"
         class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500 resize-none"
         placeholder="โน้ตถึง Claude... เช่น อยากเพิ่ม feature X, ปัญหา Y ที่เจอ, idea Z"></textarea>
@@ -86,12 +174,10 @@
         </button>
       </div>
     </div>
-
-    <!-- Notes List -->
     <div id="notes-list" class="space-y-2">
       <div class="text-gray-600 text-sm">Loading notes...</div>
     </div>
-  </section>
+  </div>
 
   <!-- Footer -->
   <div class="text-center text-gray-700 text-xs pb-4">
@@ -117,7 +203,7 @@
         <input id="m-role" type="text" class="input-field" placeholder="Dev">
       </div>
       <div>
-        <label class="text-xs text-gray-400 mb-1 block">Color (tailwind color name)</label>
+        <label class="text-xs text-gray-400 mb-1 block">Color</label>
         <select id="m-color" class="input-field">
           <option value="indigo">Indigo</option>
           <option value="violet">Violet</option>
@@ -166,9 +252,49 @@
   .input-field:focus { border-color: rgb(99,102,241); }
 </style>
 
+<script>
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'dark',
+    flowchart: { curve: 'basis', padding: 20 },
+    themeVariables: {
+      darkMode: true,
+      background: '#111827',
+      primaryColor: '#1e3a5f',
+      primaryTextColor: '#fff',
+      lineColor: '#6366f1',
+      edgeLabelBackground: '#111827',
+      fontSize: '13px'
+    }
+  });
+
+  let mermaidRendered = false;
+
+  window.switchTab = function(tab) {
+    ['team', 'workflow', 'notes'].forEach(t => {
+      document.getElementById('tab-' + t).classList.add('hidden');
+      const btn = document.getElementById('tab-btn-' + t);
+      btn.classList.remove('tab-active');
+      btn.classList.add('text-gray-400', 'hover:text-gray-200');
+    });
+    document.getElementById('tab-' + tab).classList.remove('hidden');
+    const activeBtn = document.getElementById('tab-btn-' + tab);
+    activeBtn.classList.add('tab-active');
+    activeBtn.classList.remove('text-gray-400', 'hover:text-gray-200');
+
+    document.getElementById('add-btn').style.display = tab === 'team' ? '' : 'none';
+    document.getElementById('sync-btn').style.display = tab === 'team' ? '' : 'none';
+
+    if (tab === 'workflow' && !mermaidRendered) {
+      mermaid.run({ nodes: [document.getElementById('workflow-diagram')] });
+      mermaidRendered = true;
+    }
+  }
+</script>
+
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc, addDoc, query, orderBy, onSnapshot, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc, addDoc, query, orderBy, limit, onSnapshot, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAKxWv3FI7HrdrRlnJhsQbJ-97Pb_sdiOQ",
@@ -182,8 +308,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ─── PIN ───────────────────────────────────────────────
-const CORRECT_PIN = "7777"; // change me
+// ─── PIN ────────────────────────────────────────────────
+const CORRECT_PIN = "7777";
 
 window.checkPin = function() {
   const val = document.getElementById('pin-input').value;
@@ -206,7 +332,7 @@ if (localStorage.getItem('champ-auth') === '1') {
   init();
 }
 
-// ─── Color map ─────────────────────────────────────────
+// ─── Color map ──────────────────────────────────────────
 const colorMap = {
   indigo: { bg: 'bg-indigo-900/40', border: 'border-indigo-700/50', text: 'text-indigo-400', dot: 'bg-indigo-500' },
   violet: { bg: 'bg-violet-900/40', border: 'border-violet-700/50', text: 'text-violet-400', dot: 'bg-violet-500' },
@@ -217,28 +343,29 @@ const colorMap = {
   pink:    { bg: 'bg-pink-900/40',    border: 'border-pink-700/50',    text: 'text-pink-400',    dot: 'bg-pink-500' },
 };
 
-// ─── Default team (source of truth = CLAUDE.md) ────────
+// ─── Default team ────────────────────────────────────────
 const DEFAULT_MEMBERS = [
-  { id: 'ace',  name: 'Ace ⭐', role: 'Chief of Staff', color: 'sky',     scope: 'Orchestration, strategy, diagnosis, delegation — talks to Champ first when he doesn\'t know what he needs', style: 'Calm authority. Asks one sharp question. Diagnoses before directing. Thai + English.', example: '"โปรเจคไหนก่อน?" / "ชัดแล้ว — Kai จัดการ, Nova เตรียม post"', order: 0 },
-  { id: 'kai',  name: 'Kai',   role: 'Dev',             color: 'indigo',  scope: 'Feature building, debugging, refactoring, deploy, code review', style: 'Ultra terse. Results only. No preamble. No explanation of what code does.', example: '"Done. app/page.tsx:42 — auth guard added."', order: 1 },
-  { id: 'nova', name: 'Nova',  role: 'Content',         color: 'violet',  scope: 'Social media posts (FB/IG/TikTok), video scripts, voiceovers, marketing copy', style: 'Creative, energetic. Offers 2–3 options when helpful. Writes punchy Thai-friendly copy.', example: '"3 options: [A] hook-first / [B] story / [C] problem-led. Pick or mix."', order: 2 },
-  { id: 'sam',  name: 'Sam',   role: 'Research',        color: 'emerald', scope: 'Technical research, library comparison, market research, data lookup, solution scouting', style: 'Structured, analytical. Numbered findings. Clear recommendation at end.', example: '"3 approaches: 1. X — pros/cons 2. Y — pros/cons → Recommend: Z"', order: 3 },
-  { id: 'jade', name: 'Jade',  role: 'QA',              color: 'rose',    scope: 'Code review, testing, bug verification, security check, pre-deploy audit', style: 'Skeptical, precise. Severity-ordered. No sugar-coating.', example: '"[Critical] X breaks auth. [Warning] Y leaks state. [Minor] Z naming."', order: 4 },
-  { id: 'iris',  name: 'Iris',  role: 'Brain',   color: 'amber', scope: 'Memory updates, Second Brain vault (iCloud/Second Brain/), decisions log, session summaries', style: 'Organized, confirmatory. Minimal words. Reports exactly what was saved where. Briefs Champ at session start.', example: '"Updated: Projects/Up Level Guild.md · Decisions/Index.md"', order: 5 },
-  { id: 'pixel', name: 'Pixel', role: 'Design',  color: 'pink',  scope: 'UI/UX specs, wireframes, color systems, component layout — always works BEFORE Kai codes', style: 'Visual, concrete. Outputs Tailwind-ready specs. Recommends; offers 2 options only when real tradeoff exists.', example: '"Card: bg-gray-800 rounded-xl p-4. CTA: indigo-600 full-width."', order: 6 },
-  { id: 'bolt',  name: 'Bolt',  role: 'Tools & Automation', color: 'amber', scope: 'Research, install, and configure tools for the team — image gen, MCP servers, design tools, AI aids, automation pipelines. Finds free first, paid if worth it. Installs, doesn\'t just suggest.', style: 'Action-first. Reports what was installed and where. No fluff.', example: '"Canva template ready. NotebookLM notebook created. MCP server installed."', order: 7 },
-  { id: 'rena',  name: 'Rena',  role: 'Customer Insight', color: 'rose', scope: 'Demand mapping, buyer persona research, VOC (voice of customer), review mining, market gap identification. Answers: who buys, why they buy, what they wish existed.', style: 'Empathy-driven analyst. Outputs actionable personas + pain points, not just market stats.', example: '"Buyer: HS math teacher, US suburban, AP prep. Pain: no worked solutions. WTP: $4–8/set."', order: 8 },
-  { id: 'max',   name: 'Max',   role: 'Math & Physics', color: 'sky', scope: 'Math and Physics content creation — problem sets, worked examples, formula sheets, curriculum mapping (AP, IB, O-Level, A-Level). Ensures accuracy, proper notation, and difficulty progression.', style: 'Precise, methodical. Thinks like a textbook author. Organizes by topic, difficulty tier, learning objective.', example: '"Unit 3: 15 questions — 5 conceptual, 7 procedural, 3 challenge. AP Physics 1 aligned."', order: 9 },
-  { id: 'sage',  name: 'Sage',  role: 'Instructional Design', color: 'emerald', scope: 'Educational resource design — layout, visual hierarchy, typography, TPT-optimized thumbnails, teacher-facing UX. Makes resources easy to use, visually appealing, and sellable.', style: 'Visual + pedagogical. Outputs concrete specs: fonts, colors, spacing, page structure, thumbnail composition.', example: '"Cover: bold title top-left, subject icon right, #1E3A5F bg. 2-column problem layout. Nunito 12pt body."', order: 10 },
-  { id: 'vera',  name: 'Vera',  role: 'Executive Secretary', color: 'violet', scope: 'Form filling, document reading/summarizing, deadline tracking, follow-ups, correspondence drafts, admin research. Handles anything Champ needs to fill out, read, or track.', style: 'Warm, precise, professional. Never skips a field or detail. Outputs structured tables for forms, TL;DR + Action Items for documents.', example: '"[ต้องทำ]: ต่ออายุ visa ภายใน 14 วัน · [ต้องการจากคุณ]: passport scan"', order: 11 },
-  { id: 'flux',  name: 'Flux',  role: 'Workflow Monitor', color: 'indigo', scope: 'Observes and logs all team member activity, detects bottlenecks/slow tasks, facilitates handoffs between members, and works with Bolt to fix tool/pipeline issues.', style: 'Precise, data-driven. Reports in structured log format. Flags anomalies immediately. No fluff.', example: '"[11:42] Kai → build auth guard → DONE (3min) | [11:45] Sam → SLOW (>10min) → investigating"', order: 12 },
+  { id: 'ace',  name: 'Ace ⭐', role: 'Chief of Staff', color: 'sky',     scope: 'Orchestration, strategy, diagnosis, delegation', style: 'Calm authority. One sharp question. Thai + English.', example: '"โปรเจคไหนก่อน?" / "ชัดแล้ว — Kai จัดการ"', order: 0 },
+  { id: 'kai',  name: 'Kai',   role: 'Dev',            color: 'indigo',  scope: 'Feature building, debugging, refactoring, deploy', style: 'Ultra terse. Results only.', example: '"Done. app/page.tsx:42 — auth guard added."', order: 1 },
+  { id: 'nova', name: 'Nova',  role: 'Content',        color: 'violet',  scope: 'Social posts (FB/IG/TikTok), scripts, marketing copy', style: 'Creative, energetic. 2–3 options when helpful.', example: '"3 options: [A] hook-first / [B] story / [C] problem-led."', order: 2 },
+  { id: 'sam',  name: 'Sam',   role: 'Research',       color: 'emerald', scope: 'Technical research, market research, solution scouting', style: 'Structured, analytical. Numbered findings. Clear recommendation.', example: '"3 approaches: 1. X 2. Y → Recommend: Z"', order: 3 },
+  { id: 'jade', name: 'Jade',  role: 'QA',             color: 'rose',    scope: 'Code review, testing, security check, pre-deploy audit — mandatory gate', style: 'Skeptical, precise. Severity-ordered.', example: '"[Critical] X breaks auth. [Warning] Y leaks state."', order: 4 },
+  { id: 'iris',  name: 'Iris',  role: 'Brain',                color: 'amber',   scope: 'Memory, Second Brain vault, decisions log, session summaries', style: 'Organized, confirmatory. Minimal words.', example: '"Updated: Projects/Up Level Guild.md · Decisions/Index.md"', order: 5 },
+  { id: 'pixel', name: 'Pixel', role: 'Design',               color: 'pink',    scope: 'UI/UX specs, wireframes, color systems — always before Kai', style: 'Visual, concrete. Tailwind-ready specs.', example: '"Card: bg-gray-800 rounded-xl p-4. CTA: indigo-600."', order: 6 },
+  { id: 'bolt',  name: 'Bolt',  role: 'Tools & Automation',   color: 'amber',   scope: 'Install and configure tools — MCP servers, image gen, pipelines', style: 'Action-first. Reports what was installed.', example: '"MCP server installed. Canva template ready."', order: 7 },
+  { id: 'rena',  name: 'Rena',  role: 'Customer Insight',     color: 'rose',    scope: 'Buyer personas, VOC, review mining — must run before content team', style: 'Empathy-driven analyst. Actionable personas + pain points.', example: '"Buyer: HS math teacher. WTP: $4–8/set."', order: 8 },
+  { id: 'max',   name: 'Max',   role: 'Math & Physics',       color: 'sky',     scope: 'Problem sets, worked examples, formula sheets (AP/IB/O-Level)', style: 'Precise, methodical. Textbook author mindset.', example: '"Unit 3: 15q — 5 conceptual, 7 procedural, 3 challenge."', order: 9 },
+  { id: 'sage',  name: 'Sage',  role: 'Instructional Design', color: 'emerald', scope: 'Educational layout, TPT thumbnails, teacher UX — after Rena', style: 'Visual + pedagogical. Concrete specs.', example: '"Cover: bold title, #1E3A5F bg. 2-col layout. Nunito 12pt."', order: 10 },
+  { id: 'vera',  name: 'Vera',  role: 'Executive Secretary',  color: 'violet',  scope: 'Forms, document reading, deadline tracking, correspondence', style: 'Warm, precise, professional.', example: '"[ต้องทำ]: ต่ออายุ visa ภายใน 14 วัน"', order: 11 },
+  { id: 'flux',  name: 'Flux',  role: 'Workflow Monitor',     color: 'indigo',  scope: 'Logs all activity to Firestore team-workflow + local file. Triggers Iris at session end.', style: 'Precise, data-driven. Structured log format.', example: '"[11:42] Kai → auth guard → DONE (3min)"', order: 12 },
 ];
 
-// ─── Init ──────────────────────────────────────────────
+// ─── Init ────────────────────────────────────────────────
 async function init() {
   await seedIfEmpty();
   loadTeam();
   loadNotes();
+  loadActivityFeed();
 }
 
 async function seedIfEmpty() {
@@ -251,19 +378,19 @@ async function seedIfEmpty() {
 }
 
 window.syncDefaults = async function() {
-  if (!confirm('Sync team to CLAUDE.md defaults? This overwrites current Firestore data.')) return;
+  if (!confirm('Sync team to CLAUDE.md defaults? Overwrites Firestore data.')) return;
   for (const m of DEFAULT_MEMBERS) {
     await setDoc(doc(db, 'team-config', m.id), m);
   }
   alert('Team synced.');
 }
 
-// ─── Team ──────────────────────────────────────────────
+// ─── Team ────────────────────────────────────────────────
 function loadTeam() {
   const q = query(collection(db, 'team-config'), orderBy('order'));
   onSnapshot(q, snap => {
     const grid = document.getElementById('team-grid');
-    if (snap.empty) { grid.innerHTML = '<p class="text-gray-600 text-sm">No members yet.</p>'; return; }
+    if (snap.empty) { grid.innerHTML = '<p class="text-gray-600 text-sm">No members.</p>'; return; }
     grid.innerHTML = snap.docs.map(d => memberCard(d.id, d.data())).join('');
   });
 }
@@ -287,33 +414,68 @@ function memberCard(id, m) {
     </div>`;
 }
 
-// ─── Member Modal ──────────────────────────────────────
+// ─── Activity Feed ───────────────────────────────────────
+const statusConfig = {
+  'IN_PROGRESS': { label: 'In Progress', cls: 'text-yellow-400 bg-yellow-900/30 border-yellow-800/40', dot: '🟡' },
+  'DONE':        { label: 'Done',        cls: 'text-emerald-400 bg-emerald-900/30 border-emerald-800/40', dot: '✅' },
+  'BLOCKED':     { label: 'Blocked',     cls: 'text-red-400 bg-red-900/30 border-red-800/40', dot: '🔴' },
+  'SLOW':        { label: 'Slow',        cls: 'text-orange-400 bg-orange-900/30 border-orange-800/40', dot: '🟠' },
+  'HANDOFF':     { label: 'Handoff',     cls: 'text-sky-400 bg-sky-900/30 border-sky-800/40', dot: '🔀' },
+};
+
+function loadActivityFeed() {
+  const q = query(collection(db, 'team-workflow'), orderBy('timestamp', 'desc'), limit(30));
+  onSnapshot(q, snap => {
+    const statusEl = document.getElementById('activity-status');
+    statusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block"></span> live';
+    statusEl.className = 'flex items-center gap-1.5 text-xs text-emerald-500';
+
+    const feed = document.getElementById('activity-feed');
+    if (snap.empty) {
+      feed.innerHTML = '<p class="text-gray-600 text-sm">No activity yet. Flux will log here each session.</p>';
+      return;
+    }
+    feed.innerHTML = snap.docs.map(d => activityCard(d.data())).join('');
+  }, () => {
+    const statusEl = document.getElementById('activity-status');
+    statusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span> error';
+    statusEl.className = 'flex items-center gap-1.5 text-xs text-red-500';
+  });
+}
+
+function activityCard(a) {
+  const s = statusConfig[a.status] || statusConfig['DONE'];
+  const time = a.timestamp?.toDate
+    ? a.timestamp.toDate().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
+    : '';
+  return `
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-3 flex items-start gap-3">
+      <div class="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center text-sm font-bold text-gray-300 flex-shrink-0">
+        ${(a.member || '?')[0].toUpperCase()}
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center flex-wrap gap-2">
+          <span class="text-white text-sm font-medium">${escHtml(a.member || '')}</span>
+          <span class="text-xs px-2 py-0.5 rounded-full border ${s.cls}">${s.dot} ${s.label}</span>
+          ${a.duration ? `<span class="text-gray-600 text-xs">${escHtml(a.duration)}</span>` : ''}
+          ${a.handoff_to ? `<span class="text-sky-500 text-xs">→ ${escHtml(a.handoff_to)}</span>` : ''}
+        </div>
+        <p class="text-gray-400 text-sm mt-1">${escHtml(a.task || '')}</p>
+        ${a.notes ? `<p class="text-gray-600 text-xs mt-0.5">${escHtml(a.notes)}</p>` : ''}
+        <div class="text-gray-700 text-xs mt-1">${time}${a.session ? ` · ${escHtml(a.session)}` : ''}</div>
+      </div>
+    </div>`;
+}
+
+// ─── Member Modal ────────────────────────────────────────
 window.openEditMember = function(id) {
-  onSnapshot(doc(db, 'team-config', id), snap => {
-    const m = snap.data();
-    document.getElementById('m-id').value = id;
-    document.getElementById('m-name').value = m.name || '';
-    document.getElementById('m-role').value = m.role || '';
-    document.getElementById('m-color').value = m.color || 'indigo';
-    document.getElementById('m-scope').value = m.scope || '';
-    document.getElementById('m-style').value = m.style || '';
-    document.getElementById('m-example').value = m.example || '';
-    document.getElementById('modal-title').textContent = `Edit — ${m.name}`;
-    document.getElementById('delete-btn').classList.remove('hidden');
-    document.getElementById('member-modal').classList.remove('hidden');
-  }, { source: 'cache' });
-  // get fresh data
   getDocs(collection(db, 'team-config')).then(snap => {
     const d = snap.docs.find(d => d.id === id);
     if (!d) return;
     const m = d.data();
+    ['name','role','scope','style','example'].forEach(f => document.getElementById('m-'+f).value = m[f] || '');
     document.getElementById('m-id').value = id;
-    document.getElementById('m-name').value = m.name || '';
-    document.getElementById('m-role').value = m.role || '';
     document.getElementById('m-color').value = m.color || 'indigo';
-    document.getElementById('m-scope').value = m.scope || '';
-    document.getElementById('m-style').value = m.style || '';
-    document.getElementById('m-example').value = m.example || '';
     document.getElementById('modal-title').textContent = `Edit — ${m.name}`;
     document.getElementById('delete-btn').classList.remove('hidden');
     document.getElementById('member-modal').classList.remove('hidden');
@@ -335,13 +497,13 @@ window.closeModal = function() {
 window.saveMember = async function() {
   const id = document.getElementById('m-id').value || document.getElementById('m-name').value.toLowerCase().replace(/\s+/g,'-');
   const data = {
-    name: document.getElementById('m-name').value,
-    role: document.getElementById('m-role').value,
-    color: document.getElementById('m-color').value,
-    scope: document.getElementById('m-scope').value,
-    style: document.getElementById('m-style').value,
+    name:    document.getElementById('m-name').value,
+    role:    document.getElementById('m-role').value,
+    color:   document.getElementById('m-color').value,
+    scope:   document.getElementById('m-scope').value,
+    style:   document.getElementById('m-style').value,
     example: document.getElementById('m-example').value,
-    order: Date.now(),
+    order:   Date.now(),
   };
   await setDoc(doc(db, 'team-config', id), data, { merge: true });
   closeModal();
@@ -354,26 +516,18 @@ window.deleteMember = async function() {
   closeModal();
 }
 
-// ─── Notes ─────────────────────────────────────────────
+// ─── Notes ──────────────────────────────────────────────
 function loadNotes() {
   const q = query(collection(db, 'claude-notes'), orderBy('timestamp', 'desc'));
   onSnapshot(q, snap => {
-    const list = document.getElementById('notes-list');
     const badge = document.getElementById('unread-badge');
     const unread = snap.docs.filter(d => !d.data().read).length;
+    unread > 0
+      ? (badge.textContent = unread, badge.classList.remove('hidden'))
+      : badge.classList.add('hidden');
 
-    if (unread > 0) {
-      badge.textContent = unread + ' unread';
-      badge.classList.remove('hidden');
-    } else {
-      badge.classList.add('hidden');
-    }
-
-    if (snap.empty) {
-      list.innerHTML = '<p class="text-gray-600 text-sm">ยังไม่มีโน้ต</p>';
-      return;
-    }
-
+    const list = document.getElementById('notes-list');
+    if (snap.empty) { list.innerHTML = '<p class="text-gray-600 text-sm">ยังไม่มีโน้ต</p>'; return; }
     list.innerHTML = snap.docs.map(d => noteCard(d.id, d.data())).join('');
   });
 }
@@ -382,9 +536,8 @@ const priorityLabel = { normal: '', urgent: '🔴', idea: '💡', bug: '🐛' };
 
 function noteCard(id, n) {
   const time = n.timestamp?.toDate ? n.timestamp.toDate().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : '';
-  const readClass = n.read ? 'opacity-50' : '';
   return `
-    <div class="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4 ${readClass}">
+    <div class="bg-gray-800/60 border border-gray-700/50 rounded-xl p-4 ${n.read ? 'opacity-50' : ''}">
       <div class="flex items-start gap-3">
         <div class="flex-1">
           ${n.priority && n.priority !== 'normal' ? `<span class="text-xs mr-1">${priorityLabel[n.priority]||''}</span>` : ''}
@@ -392,8 +545,8 @@ function noteCard(id, n) {
           <div class="text-gray-600 text-xs mt-2">${time}</div>
         </div>
         <div class="flex gap-2 flex-shrink-0">
-          ${!n.read ? `<button onclick="markRead('${id}')" class="text-xs text-indigo-400 hover:text-indigo-300 transition">✓ Read</button>` : '<span class="text-xs text-gray-600">✓</span>'}
-          <button onclick="deleteNote('${id}')" class="text-xs text-gray-600 hover:text-red-400 transition">✕</button>
+          ${!n.read ? `<button onclick="markRead('${id}')" class="text-xs text-indigo-400 hover:text-indigo-300">✓ Read</button>` : '<span class="text-xs text-gray-600">✓</span>'}
+          <button onclick="deleteNote('${id}')" class="text-xs text-gray-600 hover:text-red-400">✕</button>
         </div>
       </div>
     </div>`;
@@ -405,9 +558,13 @@ function escHtml(s) {
 
 window.addNote = async function() {
   const text = document.getElementById('note-input').value.trim();
-  const priority = document.getElementById('note-priority').value;
   if (!text) return;
-  await addDoc(collection(db, 'claude-notes'), { text, priority, read: false, timestamp: serverTimestamp() });
+  await addDoc(collection(db, 'claude-notes'), {
+    text,
+    priority: document.getElementById('note-priority').value,
+    read: false,
+    timestamp: serverTimestamp()
+  });
   document.getElementById('note-input').value = '';
 }
 
