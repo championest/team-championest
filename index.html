@@ -699,26 +699,112 @@ window.deleteNote = async function(id) {
 const DEFAULT_PROJECTS = [
   {
     id: 'uplevel-guild',
-    name: 'Up Level Guild Web App',
-    stack: 'Next.js 14 · TypeScript · Tailwind · Firebase · Vercel',
+    name: 'Up Level Guild — Member Web App',
+    stack: 'Next.js 14 · TypeScript · Tailwind v4 · Firebase · Vercel',
     status: 'LIVE',
-    completed: ['Leaderboard','Party system','Admin approval','Rank thresholds','Rebirth system','Claim EXP','110 members migrated'],
-    currentStep: '',
-    next: 'Ongoing maintenance',
-    updatedAt: '2026-05-12',
+    url: 'https://up-level-guild-members-web.vercel.app',
+    completed: [
+      'Dark premium UI redesign (mobile-first)',
+      'Emoji → Lucide icons system',
+      'Leaderboard (Firestore, custom SVG rank icons, fire particles)',
+      'Party system',
+      'Admin approval dashboard',
+      'Rank thresholds + rebirth system',
+      'Claim EXP (photo upload, SlipOK verify)',
+      '110 members migrated Sheets → Firestore',
+      'New member /register (2-tier pricing + referral)',
+      'Firestore security rules',
+      'Vercel deploy live',
+    ],
+    currentStep: 'Ongoing maintenance',
+    next: 'UpLevelKids sub-app (parallel project)',
+    team: 'Kai · Jade · Pixel',
+    updatedAt: '2026-05-08',
     order: 0
   },
   {
-    id: 'tpt-store',
-    name: 'TPT Store',
-    stack: 'Canva · PDF Export · Teachers Pay Teachers',
+    id: 'chibi-svg',
+    name: 'Chibi SVG Asset Library',
+    stack: 'Nano Banana → sips → vtracer → SVG',
     status: 'IN_PROGRESS',
-    completed: ['Sam research: top 5 TPT bestsellers'],
-    currentStep: 'Step 1: Task Cards — Order of Operations (Gr.6-8) · Max content + Sage template → Canva build',
-    next: 'Bundle 5 sets → list on TPT',
+    completed: [
+      'Pipeline built (bash scripts: sheet-generate, batch-generate, png2svg)',
+      'vtracer installed (aarch64)',
+      '/element-art skill created',
+      'Batch 1: 35 SVGs (cat, dog, rabbit, bear, fox)',
+      'Batch 2: 35 SVGs (panda, penguin, duck, frog, hamster)',
+      'Batch 3: 30 SVGs (hedgehog, owl — partial)',
+      '112 SVGs total in svg-final/',
+    ],
+    currentStep: 'Batch 3 in progress — tiger, elephant, and remaining animals pending',
+    next: 'Complete 20 animals × 5 poses = 100 final SVGs → use in task cards + leaderboard UI',
+    team: 'Pixel · Bolt',
     updatedAt: '2026-05-12',
     order: 1
-  }
+  },
+  {
+    id: 'tpt-store',
+    name: 'TPT Store — IB/AP Physics Math Worksheets',
+    stack: 'Canva Pro · PDF · Teachers Pay Teachers',
+    status: 'IN_PROGRESS',
+    completed: [
+      'Sam: market research (top 5 niches, pricing $3-$8/set)',
+      'Rena: buyer persona (IB/AP Physics teacher, WTP $4-$8)',
+      'Max: 3 products content ready (formula sheet, task cards, worked examples)',
+      'Sage: design specs ready (layout, fonts, colors)',
+      'Bolt: Canva template specs, TPT account setup guide',
+    ],
+    currentStep: 'Champ: open Canva Pro → set brand kit → build Product 1 (IB Physics formula sheet)',
+    next: 'Bundle 5 sets → list on TPT → target $50 USD/month first milestone',
+    team: 'Max · Sage · Nova · Rena',
+    updatedAt: '2026-05-11',
+    order: 2
+  },
+  {
+    id: 'team-dashboard',
+    name: 'Team Championest Dashboard',
+    stack: 'Static HTML · Tailwind CDN · Firebase · GitHub Pages',
+    status: 'LIVE',
+    url: 'https://championest.github.io/team-championest/',
+    completed: [
+      'PIN-gated access (7777)',
+      'Team tab — member cards from Firestore',
+      'Workflow tab — mermaid diagram + rules + live activity feed',
+      'Notes tab — leave notes to Claude (priority tags)',
+      'Skills tab — 6 slash commands with triggers',
+      'Projects tab — this view',
+      'Flux Stop hook — auto-logs session end to Firestore',
+    ],
+    currentStep: '',
+    next: 'Add session history timeline view',
+    team: 'Kai · Flux',
+    updatedAt: '2026-05-12',
+    order: 3
+  },
+  {
+    id: 'uplevel-kids',
+    name: 'Up Level Kids',
+    stack: 'Next.js (modern) · TypeScript · Tailwind · Firebase',
+    status: 'PLANNING',
+    completed: ['Repo scaffolded', 'AGENTS.md + CLAUDE.md set up'],
+    currentStep: '',
+    next: 'Define product scope — what does UpLevelKids do?',
+    team: 'Ace · Kai · Pixel',
+    updatedAt: '2026-05-12',
+    order: 4
+  },
+  {
+    id: 'chek-kon-seu',
+    name: 'เช็คคนซื่อ (Chek Kon Seu)',
+    stack: 'Next.js (modern) · TypeScript · Firebase',
+    status: 'PLANNING',
+    completed: ['Repo scaffolded', 'AGENTS.md + CLAUDE.md set up'],
+    currentStep: '',
+    next: 'Define core feature — trustworthiness check tool?',
+    team: 'Ace · Kai',
+    updatedAt: '2026-05-12',
+    order: 5
+  },
 ];
 
 const statusBadge = {
@@ -748,19 +834,34 @@ function renderProjects(projects) {
   list.innerHTML = projects.map(p => {
     const badge = statusBadge[p.status] || statusBadge['PLANNING'];
     const completedHtml = (p.completed||[]).map(c =>
-      `<span class="inline-block text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full mr-1 mb-1">${escHtml(c)}</span>`
+      `<li class="text-gray-400 text-xs">${escHtml(c)}</li>`
     ).join('');
+    const urlHtml = p.url ? `<a href="${escHtml(p.url)}" target="_blank" class="text-xs text-indigo-400 hover:underline truncate">${escHtml(p.url)}</a>` : '';
+    const teamHtml = p.team ? `<span class="text-xs text-gray-600">Team: <span class="text-gray-500">${escHtml(p.team)}</span></span>` : '';
     return `
     <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 space-y-3">
-      <div class="flex items-center justify-between flex-wrap gap-2">
-        <span class="font-semibold text-white">${escHtml(p.name)}</span>
-        <span style="background:${badge.bg};color:${badge.text}" class="text-xs font-semibold px-2.5 py-0.5 rounded-full">${badge.label}</span>
+      <div class="flex items-start justify-between flex-wrap gap-2">
+        <div class="space-y-0.5">
+          <div class="font-semibold text-white text-sm">${escHtml(p.name)}</div>
+          <div class="text-xs text-gray-600 font-mono">${escHtml(p.stack||'')}</div>
+          ${urlHtml}
+        </div>
+        <span style="background:${badge.bg};color:${badge.text}" class="text-xs font-semibold px-2.5 py-0.5 rounded-full flex-shrink-0">${badge.label}</span>
       </div>
-      <div class="text-xs text-gray-600">${escHtml(p.stack||'')}</div>
-      ${completedHtml ? `<div class="flex flex-wrap">${completedHtml}</div>` : ''}
-      ${p.currentStep ? `<div class="text-sm text-amber-400"><span class="text-gray-500 text-xs">Now: </span>${escHtml(p.currentStep)}</div>` : ''}
-      ${p.next ? `<div class="text-sm text-sky-400"><span class="text-gray-500 text-xs">Next: </span>${escHtml(p.next)}</div>` : ''}
-      <div class="text-xs text-gray-700">Updated: ${escHtml(p.updatedAt||'')}</div>
+      ${completedHtml ? `
+      <details class="group">
+        <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-300 list-none flex items-center gap-1">
+          <span class="group-open:hidden">▶</span><span class="hidden group-open:inline">▼</span>
+          ${(p.completed||[]).length} tasks done
+        </summary>
+        <ul class="mt-2 space-y-1 pl-3 border-l border-gray-800">${completedHtml}</ul>
+      </details>` : ''}
+      ${p.currentStep ? `<div class="text-xs text-amber-400 bg-amber-900/20 border border-amber-900/40 rounded-lg px-3 py-2"><span class="text-gray-500">Now: </span>${escHtml(p.currentStep)}</div>` : ''}
+      ${p.next ? `<div class="text-xs text-sky-400 bg-sky-900/20 border border-sky-900/40 rounded-lg px-3 py-2"><span class="text-gray-500">Next: </span>${escHtml(p.next)}</div>` : ''}
+      <div class="flex items-center justify-between">
+        ${teamHtml}
+        <div class="text-xs text-gray-700">Updated: ${escHtml(p.updatedAt||'')}</div>
+      </div>
     </div>`;
   }).join('');
 }
