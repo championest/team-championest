@@ -65,6 +65,10 @@
       class="flex-1 py-2 text-sm font-medium rounded-lg transition text-gray-400 hover:text-gray-200">
       🔀 Workflow
     </button>
+    <button onclick="switchTab('skills')" id="tab-btn-skills"
+      class="flex-1 py-2 text-sm font-medium rounded-lg transition text-gray-400 hover:text-gray-200">
+      ⚡ Skills
+    </button>
     <button onclick="switchTab('notes')" id="tab-btn-notes"
       class="flex-1 py-2 text-sm font-medium rounded-lg transition text-gray-400 hover:text-gray-200 flex items-center justify-center gap-1">
       📝 Notes
@@ -156,6 +160,14 @@ flowchart TD
         <p class="text-gray-600 text-sm">No activity yet. Flux will log here each session.</p>
       </div>
     </div>
+  </div>
+
+  <!-- ── SKILLS TAB ────────────────────────────────────── -->
+  <div id="tab-skills" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <p class="text-gray-500 text-xs">Slash commands — type these in Claude Code</p>
+    </div>
+    <div id="skills-grid" class="space-y-3"></div>
   </div>
 
   <!-- ── NOTES TAB ─────────────────────────────────────── -->
@@ -284,9 +296,99 @@ flowchart TD
   });
 
   let mermaidRendered = false;
+  let skillsRendered = false;
+
+  const SKILLS = [
+    {
+      name: '/pordee',
+      emoji: '⚡',
+      color: 'indigo',
+      desc: 'Ultra-compressed Thai+English mode — ตัด ~60-75% tokens โดยไม่สูญเสียความแม่นยำ',
+      triggers: ['/pordee', '/pordee lite', '/pordee full', 'พูดสั้นๆ'],
+      stops: ['หยุดพอดี', 'พูดปกติ', '/pordee stop'],
+      owner: 'All members',
+    },
+    {
+      name: '/nano-banana',
+      emoji: '🍌',
+      color: 'yellow',
+      desc: 'สร้างภาพด้วย Gemini CLI (Nano Banana) — thumbnails, icons, illustrations, ทุก format',
+      triggers: ['generate image', 'create a picture', 'make a banner', 'ทำภาพ', 'สร้างภาพ'],
+      stops: [],
+      owner: 'Pixel / Nova',
+    },
+    {
+      name: '/nano-banana-pro',
+      emoji: '🍌✨',
+      color: 'amber',
+      desc: 'สร้างภาพระดับ Pro ด้วย Gemini 3 Pro Image — hero images, OG images, product mockups',
+      triggers: ['generate an image', 'hero image', 'design a banner', 'use nano banana pro'],
+      stops: [],
+      owner: 'Pixel',
+    },
+    {
+      name: '/element-art',
+      emoji: '🎨',
+      color: 'pink',
+      desc: 'Gen chibi/kawaii SVG assets — pipeline: AI → auto-crop → waifu2x → vectorize SVG',
+      triggers: ['/element-art [theme]', 'สร้าง element artwork', 'ทำ chibi SVG', 'gen SVG characters'],
+      stops: [],
+      owner: 'Pixel',
+    },
+    {
+      name: '/research-save',
+      emoji: '🔬',
+      color: 'emerald',
+      desc: 'Research 3+ sources → fact-check (✅/⚠️/❌) → save to Google Drive + Second Brain',
+      triggers: ['/research-save [topic]', 'research แล้วเก็บ', 'สร้าง knowledge base เรื่อง'],
+      stops: [],
+      owner: 'Sam + Jade + Iris',
+    },
+    {
+      name: '/skills (JSON prompting)',
+      emoji: '🧩',
+      color: 'violet',
+      desc: 'แปลง natural language เป็น structured JSON schema สำหรับ Nano Banana Pro — 5 schema types',
+      triggers: ['JSON schema for image', 'structured prompt', 'precise image control'],
+      stops: [],
+      owner: 'Pixel',
+    },
+  ];
+
+  const skillColorMap = {
+    indigo: { bg: 'bg-indigo-900/30', border: 'border-indigo-700/40', text: 'text-indigo-300', badge: 'bg-indigo-900/50 text-indigo-300' },
+    yellow: { bg: 'bg-yellow-900/20', border: 'border-yellow-700/40', text: 'text-yellow-300', badge: 'bg-yellow-900/50 text-yellow-300' },
+    amber:  { bg: 'bg-amber-900/20',  border: 'border-amber-700/40',  text: 'text-amber-300',  badge: 'bg-amber-900/50 text-amber-300' },
+    pink:   { bg: 'bg-pink-900/20',   border: 'border-pink-700/40',   text: 'text-pink-300',   badge: 'bg-pink-900/50 text-pink-300' },
+    emerald:{ bg: 'bg-emerald-900/20',border: 'border-emerald-700/40',text: 'text-emerald-300',badge: 'bg-emerald-900/50 text-emerald-300' },
+    violet: { bg: 'bg-violet-900/20', border: 'border-violet-700/40', text: 'text-violet-300', badge: 'bg-violet-900/50 text-violet-300' },
+  };
+
+  function renderSkills() {
+    if (skillsRendered) return;
+    skillsRendered = true;
+    const grid = document.getElementById('skills-grid');
+    grid.innerHTML = SKILLS.map(s => {
+      const c = skillColorMap[s.color] || skillColorMap.indigo;
+      const triggers = s.triggers.map(t => `<code class="text-xs ${c.badge} px-1.5 py-0.5 rounded font-mono">${t}</code>`).join(' ');
+      const stops = s.stops.length ? `<div class="mt-2 flex flex-wrap gap-1 items-center"><span class="text-xs text-gray-600">stop:</span> ${s.stops.map(t => `<code class="text-xs bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded font-mono">${t}</code>`).join(' ')}</div>` : '';
+      return `
+        <div class="${c.bg} border ${c.border} rounded-xl p-4 space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-semibold ${c.text} text-sm font-mono">${s.emoji} ${s.name}</span>
+            <span class="text-xs text-gray-600 bg-gray-900/60 px-2 py-0.5 rounded-full">${s.owner}</span>
+          </div>
+          <p class="text-gray-300 text-sm">${s.desc}</p>
+          <div class="flex flex-wrap gap-1">${triggers}</div>
+          ${stops}
+        </div>`;
+    }).join('');
+  }
+
+  const ALL_TABS = ['team', 'workflow', 'skills', 'notes', 'projects'];
 
   window.switchTab = function(tab) {
-    ['team', 'workflow', 'notes', 'projects'].forEach(t => {
+    ALL_TABS.forEach(t => {
       document.getElementById('tab-' + t).classList.add('hidden');
       const btn = document.getElementById('tab-btn-' + t);
       btn.classList.remove('tab-active');
@@ -304,6 +406,7 @@ flowchart TD
       mermaid.run({ nodes: [document.getElementById('workflow-diagram')] });
       mermaidRendered = true;
     }
+    if (tab === 'skills') renderSkills();
   }
 </script>
 
