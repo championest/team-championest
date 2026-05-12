@@ -199,7 +199,7 @@ flowchart TD
   <div id="tab-projects" class="hidden space-y-4">
     <div class="flex items-center justify-between mb-1">
       <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">Active Projects</h2>
-      <span class="text-xs text-gray-600">Updated: 2026-05-12</span>
+      <button onclick="syncProjects()" class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs font-medium px-3 py-1.5 rounded-lg transition">↺ Sync</button>
     </div>
     <div id="projects-list" class="space-y-3">
       <div class="text-gray-600 text-sm">Loading...</div>
@@ -815,18 +815,21 @@ const statusBadge = {
 };
 
 async function loadProjects() {
-  const snap = await getDocs(query(collection(db, 'team-projects'), orderBy('order')));
-  let projects = snap.empty ? DEFAULT_PROJECTS : snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  if (snap.empty) {
-    for (const p of DEFAULT_PROJECTS) {
-      await setDoc(doc(db, 'team-projects', p.id), p);
-    }
+  // Always upsert default projects so new ones appear without manual sync
+  for (const p of DEFAULT_PROJECTS) {
+    await setDoc(doc(db, 'team-projects', p.id), p, { merge: false });
   }
-  renderProjects(projects);
-
   onSnapshot(query(collection(db, 'team-projects'), orderBy('order')), s => {
     if (!s.empty) renderProjects(s.docs.map(d => ({ id: d.id, ...d.data() })));
   });
+}
+
+window.syncProjects = async function() {
+  if (!confirm('Sync projects to latest defaults? Overwrites Firestore data.')) return;
+  for (const p of DEFAULT_PROJECTS) {
+    await setDoc(doc(db, 'team-projects', p.id), p);
+  }
+  alert('Projects synced.');
 }
 
 function renderProjects(projects) {
