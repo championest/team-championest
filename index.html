@@ -70,6 +70,10 @@
       📝 Notes
       <span id="unread-badge" class="hidden bg-indigo-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full note-pulse"></span>
     </button>
+    <button onclick="switchTab('projects')" id="tab-btn-projects"
+      class="flex-1 py-2 text-sm font-medium rounded-lg transition text-gray-400 hover:text-gray-200">
+      📋 Projects
+    </button>
   </div>
 
   <!-- ── TEAM TAB ───────────────────────────────────────── -->
@@ -179,6 +183,17 @@ flowchart TD
     </div>
   </div>
 
+  <!-- ── PROJECTS TAB ─────────────────────────────────── -->
+  <div id="tab-projects" class="hidden space-y-4">
+    <div class="flex items-center justify-between mb-1">
+      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">Active Projects</h2>
+      <span class="text-xs text-gray-600">Updated: 2026-05-12</span>
+    </div>
+    <div id="projects-list" class="space-y-3">
+      <div class="text-gray-600 text-sm">Loading...</div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <div class="text-center text-gray-700 text-xs pb-4">
     Team Championest · Claude Code Dashboard
@@ -271,7 +286,7 @@ flowchart TD
   let mermaidRendered = false;
 
   window.switchTab = function(tab) {
-    ['team', 'workflow', 'notes'].forEach(t => {
+    ['team', 'workflow', 'notes', 'projects'].forEach(t => {
       document.getElementById('tab-' + t).classList.add('hidden');
       const btn = document.getElementById('tab-btn-' + t);
       btn.classList.remove('tab-active');
@@ -366,6 +381,7 @@ async function init() {
   loadTeam();
   loadNotes();
   loadActivityFeed();
+  loadProjects();
 }
 
 async function seedIfEmpty() {
@@ -574,6 +590,76 @@ window.markRead = async function(id) {
 
 window.deleteNote = async function(id) {
   await deleteDoc(doc(db, 'claude-notes', id));
+}
+
+// ─── Projects ────────────────────────────────────────────
+const DEFAULT_PROJECTS = [
+  {
+    id: 'uplevel-guild',
+    name: 'Up Level Guild Web App',
+    stack: 'Next.js 14 · TypeScript · Tailwind · Firebase · Vercel',
+    status: 'LIVE',
+    completed: ['Leaderboard','Party system','Admin approval','Rank thresholds','Rebirth system','Claim EXP','110 members migrated'],
+    currentStep: '',
+    next: 'Ongoing maintenance',
+    updatedAt: '2026-05-12',
+    order: 0
+  },
+  {
+    id: 'tpt-store',
+    name: 'TPT Store',
+    stack: 'Canva · PDF Export · Teachers Pay Teachers',
+    status: 'IN_PROGRESS',
+    completed: ['Sam research: top 5 TPT bestsellers'],
+    currentStep: 'Step 1: Task Cards — Order of Operations (Gr.6-8) · Max content + Sage template → Canva build',
+    next: 'Bundle 5 sets → list on TPT',
+    updatedAt: '2026-05-12',
+    order: 1
+  }
+];
+
+const statusBadge = {
+  'LIVE':        { bg: '#166534', text: '#86efac', label: '✅ LIVE' },
+  'IN_PROGRESS': { bg: '#7c2d12', text: '#fdba74', label: '🔄 IN PROGRESS' },
+  'PLANNING':    { bg: '#1e3a5f', text: '#7dd3fc', label: '📋 PLANNING' },
+  'DONE':        { bg: '#1e293b', text: '#94a3b8', label: '✓ DONE' },
+};
+
+async function loadProjects() {
+  const snap = await getDocs(query(collection(db, 'team-projects'), orderBy('order')));
+  let projects = snap.empty ? DEFAULT_PROJECTS : snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  if (snap.empty) {
+    for (const p of DEFAULT_PROJECTS) {
+      await setDoc(doc(db, 'team-projects', p.id), p);
+    }
+  }
+  renderProjects(projects);
+
+  onSnapshot(query(collection(db, 'team-projects'), orderBy('order')), s => {
+    if (!s.empty) renderProjects(s.docs.map(d => ({ id: d.id, ...d.data() })));
+  });
+}
+
+function renderProjects(projects) {
+  const list = document.getElementById('projects-list');
+  list.innerHTML = projects.map(p => {
+    const badge = statusBadge[p.status] || statusBadge['PLANNING'];
+    const completedHtml = (p.completed||[]).map(c =>
+      `<span class="inline-block text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full mr-1 mb-1">${escHtml(c)}</span>`
+    ).join('');
+    return `
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 space-y-3">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <span class="font-semibold text-white">${escHtml(p.name)}</span>
+        <span style="background:${badge.bg};color:${badge.text}" class="text-xs font-semibold px-2.5 py-0.5 rounded-full">${badge.label}</span>
+      </div>
+      <div class="text-xs text-gray-600">${escHtml(p.stack||'')}</div>
+      ${completedHtml ? `<div class="flex flex-wrap">${completedHtml}</div>` : ''}
+      ${p.currentStep ? `<div class="text-sm text-amber-400"><span class="text-gray-500 text-xs">Now: </span>${escHtml(p.currentStep)}</div>` : ''}
+      ${p.next ? `<div class="text-sm text-sky-400"><span class="text-gray-500 text-xs">Next: </span>${escHtml(p.next)}</div>` : ''}
+      <div class="text-xs text-gray-700">Updated: ${escHtml(p.updatedAt||'')}</div>
+    </div>`;
+  }).join('');
 }
 </script>
 </body>
