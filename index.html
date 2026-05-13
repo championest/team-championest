@@ -42,22 +42,66 @@
     .pin-btn:hover { opacity: 0.9; transform: translateY(-1px); }
     .pin-btn:active { transform: translateY(0); }
 
-    /* Tabs */
-    .tab-active {
-      background: rgb(30,30,50);
-      color: white;
-      box-shadow: inset 0 -2px 0 rgb(99,102,241);
+    /* Floating Dock Tabs */
+    .dock-wrap {
+      display: flex;
+      justify-content: center;
+      padding: 0.25rem 0 0.5rem;
     }
-    .tab-btn {
-      transition: color 0.15s, background 0.15s;
-      border-radius: 0;
-      padding: 0.625rem 0.5rem;
-      font-size: 0.75rem;
+    .dock {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      background: rgba(17,17,27,0.75);
+      border: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 9999px;
+      padding: 4px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .dock-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: rgb(107,114,128);
+      font-size: 0.72rem;
       font-weight: 500;
-      letter-spacing: 0.01em;
+      transition: color 0.15s, background 0.15s, transform 0.15s;
+      position: relative;
+      white-space: nowrap;
     }
-    .tab-btn:not(.tab-active) { color: rgb(107,114,128); }
-    .tab-btn:not(.tab-active):hover { color: rgb(209,213,219); background: rgba(255,255,255,0.04); }
+    .dock-item svg { flex-shrink: 0; transition: transform 0.15s; }
+    .dock-item:hover:not(.dock-active) {
+      color: rgb(229,231,235);
+      background: rgba(255,255,255,0.06);
+      transform: translateY(-1px);
+    }
+    .dock-item:hover svg { transform: scale(1.1); }
+    .dock-active {
+      background: rgba(99,102,241,0.18);
+      color: rgb(165,180,252);
+      box-shadow: inset 0 0 0 1px rgba(99,102,241,0.3);
+    }
+    /* Notes badge */
+    .dock-badge {
+      position: absolute;
+      top: 3px; right: 8px;
+      width: 7px; height: 7px;
+      background: rgb(239,68,68);
+      border-radius: 9999px;
+      border: 1.5px solid rgb(17,17,27);
+      animation: badgePulse 2s ease-in-out infinite;
+    }
+    @keyframes badgePulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }
+      50% { box-shadow: 0 0 0 4px rgba(239,68,68,0); }
+    }
 
     /* Member cards */
     .member-card {
@@ -146,29 +190,31 @@
     </div>
   </div>
 
-  <!-- Tab Navigation -->
-  <div class="flex border-b border-gray-800/80 -mx-1">
-    <button onclick="switchTab('team')" id="tab-btn-team"
-      class="tab-btn flex-1 tab-active">
-      Team
-    </button>
-    <button onclick="switchTab('workflow')" id="tab-btn-workflow"
-      class="tab-btn flex-1">
-      Workflow
-    </button>
-    <button onclick="switchTab('skills')" id="tab-btn-skills"
-      class="tab-btn flex-1">
-      Skills
-    </button>
-    <button onclick="switchTab('notes')" id="tab-btn-notes"
-      class="tab-btn flex-1 flex items-center justify-center gap-1">
-      Notes
-      <span id="unread-badge" class="hidden bg-indigo-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full note-pulse leading-none"></span>
-    </button>
-    <button onclick="switchTab('projects')" id="tab-btn-projects"
-      class="tab-btn flex-1">
-      Projects
-    </button>
+  <!-- Floating Dock Navigation -->
+  <div class="dock-wrap">
+    <nav class="dock">
+      <button onclick="switchTab('team')" id="tab-btn-team" class="dock-item dock-active">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Team
+      </button>
+      <button onclick="switchTab('workflow')" id="tab-btn-workflow" class="dock-item">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+        Workflow
+      </button>
+      <button onclick="switchTab('skills')" id="tab-btn-skills" class="dock-item">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Skills
+      </button>
+      <button onclick="switchTab('notes')" id="tab-btn-notes" class="dock-item" style="position:relative">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Notes
+        <span id="unread-badge" class="dock-badge hidden"></span>
+      </button>
+      <button onclick="switchTab('projects')" id="tab-btn-projects" class="dock-item">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Projects
+      </button>
+    </nav>
   </div>
 
   <!-- ── TEAM TAB ───────────────────────────────────────── -->
@@ -569,11 +615,11 @@ flowchart TD
     ALL_TABS.forEach(t => {
       document.getElementById('tab-' + t).classList.add('hidden');
       const btn = document.getElementById('tab-btn-' + t);
-      btn.classList.remove('tab-active');
+      btn.classList.remove('dock-active');
     });
     document.getElementById('tab-' + tab).classList.remove('hidden');
     const activeBtn = document.getElementById('tab-btn-' + tab);
-    activeBtn.classList.add('tab-active');
+    activeBtn.classList.add('dock-active');
 
     document.getElementById('add-btn').style.display = tab === 'team' ? '' : 'none';
     document.getElementById('sync-btn').style.display = tab === 'team' ? '' : 'none';
@@ -980,7 +1026,7 @@ function loadNotes() {
     const badge = document.getElementById('unread-badge');
     const unread = snap.docs.filter(d => !d.data().read).length;
     unread > 0
-      ? (badge.textContent = unread, badge.classList.remove('hidden'))
+      ? badge.classList.remove('hidden')
       : badge.classList.add('hidden');
 
     const list = document.getElementById('notes-list');
