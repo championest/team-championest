@@ -10,6 +10,42 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     * { font-family: 'Inter', sans-serif; }
 
+    /* Animated gradient orbs background */
+    body { position: relative; overflow-x: hidden; }
+    .bg-orb {
+      position: fixed; border-radius: 50%; pointer-events: none; z-index: 0;
+      filter: blur(90px); opacity: 0.06;
+    }
+    .bg-orb-1 {
+      width: 600px; height: 600px; top: -200px; left: -150px;
+      background: radial-gradient(circle, #6366f1, #8b5cf6);
+      animation: orbFloat1 12s ease-in-out infinite;
+    }
+    .bg-orb-2 {
+      width: 400px; height: 400px; bottom: 10%; right: -100px;
+      background: radial-gradient(circle, #06b6d4, #3b82f6);
+      animation: orbFloat2 15s ease-in-out infinite;
+    }
+    .bg-orb-3 {
+      width: 300px; height: 300px; top: 50%; left: 40%;
+      background: radial-gradient(circle, #8b5cf6, #ec4899);
+      animation: orbFloat3 10s ease-in-out infinite;
+    }
+    @keyframes orbFloat1 {
+      0%,100% { transform: translate(0,0) scale(1); }
+      33% { transform: translate(60px,-40px) scale(1.05); }
+      66% { transform: translate(-30px,50px) scale(0.95); }
+    }
+    @keyframes orbFloat2 {
+      0%,100% { transform: translate(0,0) scale(1); }
+      50% { transform: translate(-80px,-60px) scale(1.1); }
+    }
+    @keyframes orbFloat3 {
+      0%,100% { transform: translate(0,0) scale(1); opacity: 0.06; }
+      50% { transform: translate(40px,-80px) scale(1.15); opacity: 0.04; }
+    }
+    #app, #pin-screen { position: relative; z-index: 1; }
+
     /* PIN screen */
     .pin-bg {
       background: radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.12) 0%, transparent 70%),
@@ -105,15 +141,18 @@
 
     /* Member cards */
     .member-card {
-      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
       background: rgba(17,24,39,0.6);
-      border: 1px solid rgba(55,65,81,0.6);
+      border: 1px solid rgba(55,65,81,0.5);
     }
-    .member-card:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3), 0 0 0 1px rgba(99,102,241,0.2);
-      border-color: rgba(99,102,241,0.3);
-    }
+    .member-card:hover { transform: translateY(-2px); }
+    .member-card[data-color="indigo"]:hover  { box-shadow: 0 0 0 1px rgba(99,102,241,0.4), 0 8px 30px rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.4); }
+    .member-card[data-color="violet"]:hover  { box-shadow: 0 0 0 1px rgba(139,92,246,0.4), 0 8px 30px rgba(139,92,246,0.15); border-color: rgba(139,92,246,0.4); }
+    .member-card[data-color="emerald"]:hover { box-shadow: 0 0 0 1px rgba(16,185,129,0.4), 0 8px 30px rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.4); }
+    .member-card[data-color="rose"]:hover    { box-shadow: 0 0 0 1px rgba(244,63,94,0.4),  0 8px 30px rgba(244,63,94,0.15);  border-color: rgba(244,63,94,0.4); }
+    .member-card[data-color="amber"]:hover   { box-shadow: 0 0 0 1px rgba(245,158,11,0.4), 0 8px 30px rgba(245,158,11,0.15); border-color: rgba(245,158,11,0.4); }
+    .member-card[data-color="sky"]:hover     { box-shadow: 0 0 0 1px rgba(14,165,233,0.4), 0 8px 30px rgba(14,165,233,0.15); border-color: rgba(14,165,233,0.4); }
+    .member-card[data-color="pink"]:hover    { box-shadow: 0 0 0 1px rgba(236,72,153,0.4), 0 8px 30px rgba(236,72,153,0.15); border-color: rgba(236,72,153,0.4); }
     .avatar-ring { box-shadow: 0 0 0 2px rgba(255,255,255,0.08); }
 
     /* Activity */
@@ -129,6 +168,11 @@
   </style>
 </head>
 <body class="bg-gray-950 text-gray-100 min-h-screen">
+
+<!-- Background Orbs -->
+<div class="bg-orb bg-orb-1"></div>
+<div class="bg-orb bg-orb-2"></div>
+<div class="bg-orb bg-orb-3"></div>
 
 <!-- PIN Screen -->
 <div id="pin-screen" class="pin-bg fixed inset-0 flex items-center justify-center z-50">
@@ -188,6 +232,19 @@
         + Member
       </button>
     </div>
+  </div>
+
+  <!-- Quick Stats Bar -->
+  <div id="stats-bar" class="flex items-center gap-4 text-xs text-gray-600 px-1">
+    <span id="stat-members" class="flex items-center gap-1.5">
+      <span class="w-1 h-1 rounded-full bg-gray-700"></span>—
+    </span>
+    <span id="stat-tasks" class="flex items-center gap-1.5">
+      <span class="w-1 h-1 rounded-full bg-gray-700"></span>—
+    </span>
+    <span id="stat-skills" class="flex items-center gap-1.5">
+      <span class="w-1 h-1 rounded-full bg-gray-700"></span>—
+    </span>
   </div>
 
   <!-- Floating Dock Navigation -->
@@ -708,6 +765,26 @@ async function init() {
   loadActivityFeed();
   loadProjects();
   loadSkillUsage();
+  loadStatsBar();
+}
+
+function loadStatsBar() {
+  // Member count
+  onSnapshot(collection(db, 'team-config'), snap => {
+    const el = document.getElementById('stat-members');
+    if (el) el.innerHTML = `<span class="w-1 h-1 rounded-full bg-indigo-500/60"></span><span class="text-gray-500">${snap.size} members</span>`;
+  });
+  // Tasks today
+  const today = new Date().toLocaleDateString('sv-SE');
+  const q = query(collection(db, 'team-workflow'), orderBy('timestamp', 'desc'), limit(200));
+  onSnapshot(q, snap => {
+    const todayDone = snap.docs.filter(d => d.data().session === today && d.data().status === 'DONE').length;
+    const el = document.getElementById('stat-tasks');
+    if (el) el.innerHTML = `<span class="w-1 h-1 rounded-full bg-emerald-500/60"></span><span class="text-gray-500">${todayDone} tasks done today</span>`;
+  });
+  // Skills count (static)
+  const el = document.getElementById('stat-skills');
+  if (el) el.innerHTML = `<span class="w-1 h-1 rounded-full bg-violet-500/60"></span><span class="text-gray-500">10 skills</span>`;
 }
 
 function loadSkillUsage() {
@@ -764,7 +841,7 @@ function memberCard(id, m) {
   const grad = avatarGradients[m.color] || avatarGradients.indigo;
   const initial = (m.name || '?')[0].toUpperCase();
   return `
-    <div onclick="openEditMember('${id}')" class="member-card cursor-pointer rounded-xl p-4 flex items-start gap-3.5">
+    <div onclick="openEditMember('${id}')" class="member-card cursor-pointer rounded-xl p-4 flex items-start gap-3.5" data-color="${m.color || 'indigo'}">
       <div class="avatar-ring w-10 h-10 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center text-white font-bold text-base flex-shrink-0">
         ${initial}
       </div>
