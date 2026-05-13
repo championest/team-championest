@@ -184,7 +184,15 @@ flowchart TD
           <option value="BLOCKED">🔴 Blocked</option>
           <option value="SLOW">🟠 Slow</option>
         </select>
+
+        <!-- Search -->
+        <input id="activity-search" type="text" placeholder="🔍 ค้นหา task..."
+          oninput="renderActivityFeed()"
+          class="bg-gray-800 border border-gray-700 text-gray-300 text-xs rounded-lg px-3 py-1.5 flex-1 min-w-24 focus:outline-none focus:border-indigo-500 placeholder-gray-600">
       </div>
+
+      <!-- Stats bar -->
+      <div id="activity-stats" class="flex gap-3 flex-wrap text-xs text-gray-500 pb-2 mb-2 border-b border-gray-800/60"></div>
 
       <!-- Feed -->
       <div id="activity-feed">
@@ -384,6 +392,42 @@ flowchart TD
       stops: [],
       owner: 'Pixel',
     },
+    {
+      name: '/idea-scout',
+      emoji: '💡',
+      color: 'yellow',
+      desc: 'มีไอเดียใหม่ → Sam map domains → research 3+ sources → fact-check → NotebookLM + Second Brain',
+      triggers: ['/idea-scout [idea]', 'มีไอเดียอยากทำ', 'หาองค์ความรู้ที่เกี่ยวข้อง'],
+      stops: [],
+      owner: 'Sam + Jade + Iris',
+    },
+    {
+      name: '/morning-brief',
+      emoji: '☀️',
+      color: 'amber',
+      desc: 'Ace อ่าน Second Brain + unread notes + projects → สรุป 4 ส่วนตอนเริ่ม session',
+      triggers: ['/morning-brief', 'สรุปให้หน่อย', 'เมื่อวานทำอะไร', 'เริ่มงาน'],
+      stops: [],
+      owner: 'Ace + Iris',
+    },
+    {
+      name: '/session-close',
+      emoji: '🔒',
+      color: 'indigo',
+      desc: 'Enforce session-end ritual: Flux log → Iris วาง session summary ลง Second Brain (ทั้งคู่บังคับ)',
+      triggers: ['/session-close', 'ปิด session', 'จบงาน', 'end session'],
+      stops: [],
+      owner: 'Flux + Iris',
+    },
+    {
+      name: '/jade-review',
+      emoji: '🔍',
+      color: 'pink',
+      desc: 'Jade audit ก่อน deploy: git diff + security scan + checklist → PASS/FAIL logged to dashboard',
+      triggers: ['/jade-review', 'ขอ Jade ดูก่อน', 'review ก่อน deploy', 'Jade check'],
+      stops: [],
+      owner: 'Jade',
+    },
   ];
 
   const skillColorMap = {
@@ -395,19 +439,31 @@ flowchart TD
     violet: { bg: 'bg-violet-900/20', border: 'border-violet-700/40', text: 'text-violet-300', badge: 'bg-violet-900/50 text-violet-300' },
   };
 
-  function renderSkills() {
-    if (skillsRendered) return;
+  let skillUsageCounts = {};
+  window._skillUsageCounts = skillUsageCounts;
+  window._renderSkills = function(counts) { skillUsageCounts = counts; skillsRendered = false; renderSkills(counts); };
+
+  function renderSkills(usageCounts) {
     skillsRendered = true;
+    const counts = usageCounts || skillUsageCounts;
     const grid = document.getElementById('skills-grid');
     grid.innerHTML = SKILLS.map(s => {
       const c = skillColorMap[s.color] || skillColorMap.indigo;
       const triggers = s.triggers.map(t => `<code class="text-xs ${c.badge} px-1.5 py-0.5 rounded font-mono">${t}</code>`).join(' ');
       const stops = s.stops.length ? `<div class="mt-2 flex flex-wrap gap-1 items-center"><span class="text-xs text-gray-600">stop:</span> ${s.stops.map(t => `<code class="text-xs bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded font-mono">${t}</code>`).join(' ')}</div>` : '';
+      const skillKey = s.name.split(' ')[0];
+      const useCount = counts[skillKey] || 0;
+      const useBadge = useCount > 0
+        ? `<span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full" title="Times invoked">⚡ ${useCount}x</span>`
+        : '';
       return `
         <div class="${c.bg} border ${c.border} rounded-xl p-4 space-y-2">
-          <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
             <span class="font-semibold ${c.text} text-sm font-mono">${s.emoji} ${s.name}</span>
-            <span class="text-xs text-gray-600 bg-gray-900/60 px-2 py-0.5 rounded-full">${s.owner}</span>
+            <div class="flex items-center gap-1.5">
+              ${useBadge}
+              <span class="text-xs text-gray-600 bg-gray-900/60 px-2 py-0.5 rounded-full">${s.owner}</span>
+            </div>
           </div>
           <p class="text-gray-300 text-sm">${s.desc}</p>
           <div class="flex flex-wrap gap-1">${triggers}</div>
@@ -437,7 +493,7 @@ flowchart TD
       mermaid.run({ nodes: [document.getElementById('workflow-diagram')] });
       mermaidRendered = true;
     }
-    if (tab === 'skills') renderSkills();
+    if (tab === 'skills') { skillsRendered = false; renderSkills(); }
   }
 </script>
 
@@ -516,6 +572,19 @@ async function init() {
   loadNotes();
   loadActivityFeed();
   loadProjects();
+  loadSkillUsage();
+}
+
+function loadSkillUsage() {
+  const q = query(collection(db, 'skill-logs'), orderBy('timestamp', 'desc'), limit(200));
+  onSnapshot(q, snap => {
+    const counts = {};
+    snap.docs.forEach(d => {
+      const skill = d.data().skill || '';
+      counts[skill] = (counts[skill] || 0) + 1;
+    });
+    if (window._renderSkills) window._renderSkills(counts);
+  });
 }
 
 async function seedIfEmpty() {
@@ -600,12 +669,35 @@ window.renderActivityFeed = function() {
   const feed = document.getElementById('activity-feed');
   const memberFilter = document.getElementById('filter-member')?.value || '';
   const statusFilter = document.getElementById('filter-status')?.value || '';
+  const keyword = (document.getElementById('activity-search')?.value || '').toLowerCase().trim();
+
+  const today = new Date().toLocaleDateString('sv-SE');
 
   let docs = allActivityDocs.filter(a => {
     if (memberFilter && a.member !== memberFilter) return false;
     if (statusFilter && a.status !== statusFilter) return false;
+    if (keyword && !(a.task || '').toLowerCase().includes(keyword) &&
+                   !(a.member || '').toLowerCase().includes(keyword) &&
+                   !(a.notes || '').toLowerCase().includes(keyword)) return false;
     return true;
   });
+
+  // Stats bar
+  const statsEl = document.getElementById('activity-stats');
+  if (statsEl && docs.length) {
+    const total = docs.length;
+    const done = docs.filter(a => a.status === 'DONE').length;
+    const members = new Set(docs.map(a => a.member).filter(Boolean)).size;
+    const todayCount = docs.filter(a => a.session === today).length;
+    statsEl.innerHTML = `
+      <span class="bg-gray-800 rounded-md px-2 py-0.5">${total} tasks</span>
+      <span class="bg-emerald-900/40 text-emerald-400 rounded-md px-2 py-0.5">✅ ${done} done</span>
+      <span class="bg-gray-800 rounded-md px-2 py-0.5">👥 ${members} members</span>
+      ${todayCount ? `<span class="bg-indigo-900/40 text-indigo-400 rounded-md px-2 py-0.5">📅 ${todayCount} today</span>` : ''}
+    `;
+  } else if (statsEl) {
+    statsEl.innerHTML = '';
+  }
 
   if (!docs.length) {
     feed.innerHTML = '<p class="text-gray-600 text-sm">No matching activity.</p>';
