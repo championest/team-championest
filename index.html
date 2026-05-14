@@ -252,7 +252,7 @@
     .member-card > * { position: relative; z-index: 1; }
 
     /* 3. Avatar status dot */
-    .avatar-wrap { position: relative; flex-shrink: 0; }
+    .avatar-wrap { position: relative; flex-shrink: 0; width: 40px; height: 40px; }
     .avatar-status {
       position: absolute; bottom: -1px; right: -1px;
       width: 10px; height: 10px;
@@ -365,7 +365,56 @@
       margin: 4px 0;
     }
 
-    /* Scrollbar */
+    /* ── Pixel art avatars ─────────────────────────── */
+    @keyframes pixelBounce {
+      0%, 100% { transform: translateY(0px); }
+      45% { transform: translateY(-5px); }
+      65% { transform: translateY(-2px); }
+    }
+    @keyframes pixelBounceHover {
+      0%   { transform: scale(0.85) translateY(6px); opacity: 0.5; }
+      55%  { transform: scale(1.15) translateY(-5px); opacity: 1; }
+      75%  { transform: scale(0.96) translateY(0); }
+      90%  { transform: scale(1.04) translateY(-2px); }
+      100% { transform: scale(1) translateY(0); }
+    }
+    .pixel-avatar {
+      animation: pixelBounce 2.6s ease-in-out infinite;
+      image-rendering: pixelated;
+      width: 40px; height: 40px; flex-shrink: 0;
+    }
+    .pixel-avatar svg { display: block; width: 40px; height: 40px; }
+    .member-card:hover .pixel-avatar {
+      animation: pixelBounceHover 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    .member-card { border-bottom: 2px solid transparent; }
+    .member-card[data-color="indigo"]:hover  { border-bottom-color: rgba(99,102,241,0.6); }
+    .member-card[data-color="violet"]:hover  { border-bottom-color: rgba(139,92,246,0.6); }
+    .member-card[data-color="emerald"]:hover { border-bottom-color: rgba(16,185,129,0.6); }
+    .member-card[data-color="rose"]:hover    { border-bottom-color: rgba(244,63,94,0.6); }
+    .member-card[data-color="amber"]:hover   { border-bottom-color: rgba(245,158,11,0.6); }
+    .member-card[data-color="sky"]:hover     { border-bottom-color: rgba(14,165,233,0.6); }
+    .member-card[data-color="pink"]:hover    { border-bottom-color: rgba(236,72,153,0.6); }
+
+    /* ── Flow suggestion panel ──────────────────────── */
+    .suggestion-item {
+      background: rgba(17,24,39,0.8);
+      border: 1px solid rgba(55,65,81,0.5);
+      transition: border-color 0.2s;
+    }
+    .suggestion-item:hover { border-color: rgba(99,102,241,0.35); }
+    .flow-suggest-btn {
+      background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2));
+      border: 1px solid rgba(99,102,241,0.35);
+      transition: all 0.2s;
+    }
+    .flow-suggest-btn:hover {
+      background: linear-gradient(135deg, rgba(99,102,241,0.35), rgba(139,92,246,0.35));
+      border-color: rgba(99,102,241,0.6);
+      transform: translateY(-1px);
+    }
+
+    /* ── Scrollbar */
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(75,85,99,0.5); border-radius: 4px; }
@@ -495,13 +544,32 @@
   </div>
 
   <!-- ── WORKFLOW TAB ──────────────────────────────────── -->
-  <div id="tab-workflow" class="hidden space-y-6">
+  <div id="tab-workflow" class="hidden space-y-5">
 
     <!-- Flow Diagram -->
-    <div class="bg-gray-900 rounded-xl p-4">
-      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4">Team Flow</h2>
-      <div class="overflow-x-auto">
-        <div class="mermaid" id="workflow-diagram">
+    <div class="relative bg-gray-900/80 border border-gray-800/60 rounded-2xl overflow-hidden" style="box-shadow: 0 0 40px rgba(99,102,241,0.06), 0 4px 24px rgba(0,0,0,0.3)">
+      <!-- Top glow line -->
+      <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.5),rgba(139,92,246,0.5),transparent)"></div>
+      <!-- Header -->
+      <div class="flex items-center justify-between px-5 pt-4 pb-2">
+        <div>
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+            </div>
+            <h2 class="text-sm font-semibold text-white">Team Flow</h2>
+          </div>
+          <p class="text-xs text-gray-500 mt-0.5 ml-8">How work moves through Team Championest</p>
+        </div>
+        <button onclick="openSuggestion()" class="flow-suggest-btn flex items-center gap-1.5 text-indigo-300 text-xs font-medium px-3 py-1.5 rounded-lg">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Suggest
+        </button>
+      </div>
+      <!-- Chart area -->
+      <div class="px-3 pb-4 overflow-x-auto">
+        <div class="rounded-xl bg-gray-950/70 p-3" style="border: 1px solid rgba(55,65,81,0.4)">
+          <div class="mermaid" id="workflow-diagram">
 flowchart TD
     CHAMP(["👤 Champ"]) --> ACE["⭐ Ace\nDiagnose & Delegate"]
 
@@ -530,7 +598,22 @@ flowchart TD
     style DEPLOY fill:#052e16,stroke:#22c55e,color:#dcfce7
     style FLUX fill:#1c1917,stroke:#a8a29e,color:#e7e5e4
     style IRIS fill:#451a03,stroke:#f59e0b,color:#fef3c7
+          </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Flow Suggestions Panel -->
+    <div class="bg-gray-900/60 border border-gray-800/50 rounded-2xl overflow-hidden">
+      <div class="flex items-center justify-between px-4 pt-4 pb-3">
+        <div class="flex items-center gap-2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <h2 class="text-xs font-semibold text-gray-300 uppercase tracking-widest">Flow Suggestions</h2>
+          <span id="suggestion-count" class="text-xs bg-indigo-900/50 text-indigo-300 px-2 py-0.5 rounded-full hidden">0</span>
+        </div>
+      </div>
+      <div id="suggestions-list" class="px-4 pb-4 space-y-2">
+        <p class="text-gray-600 text-xs">ยังไม่มี suggestion — กด "Suggest" เพื่อเสนอ flow ใหม่</p>
       </div>
     </div>
 
@@ -655,6 +738,48 @@ flowchart TD
   <!-- Footer -->
   <div class="text-center text-gray-700 text-xs pb-4">
     Team Championest · Claude Code Dashboard
+  </div>
+</div>
+
+<!-- Suggestion Modal -->
+<div id="suggestion-modal" class="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-40 hidden px-0 sm:px-4" onclick="if(event.target===this)closeSuggestion()">
+  <div class="bg-gray-800 border border-gray-700/60 w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl p-6 space-y-4" style="box-shadow: 0 -4px 40px rgba(99,102,241,0.1)">
+    <div class="flex items-center justify-between">
+      <div>
+        <h3 class="text-base font-semibold text-white">Suggest a Flow Change</h3>
+        <p class="text-xs text-gray-500 mt-0.5">เสนอไอเดียปรับปรุง workflow ของทีม</p>
+      </div>
+      <button onclick="closeSuggestion()" class="text-gray-500 hover:text-gray-300 text-2xl leading-none">&times;</button>
+    </div>
+    <div class="space-y-3">
+      <div>
+        <label class="text-xs text-gray-400 mb-1 block">เกี่ยวกับ node/step ไหน?</label>
+        <select id="sug-node" class="input-field">
+          <option value="">— เลือก (optional) —</option>
+          <option value="Champ → Ace">Champ → Ace</option>
+          <option value="Ace → Sam/Pixel">Ace → Sam / Pixel (parallel)</option>
+          <option value="Ace → Rena">Ace → Rena → Content</option>
+          <option value="Ace → Bolt/Vera">Ace → Bolt / Vera</option>
+          <option value="Sam/Pixel → Kai">Sam + Pixel → Kai</option>
+          <option value="Kai → Jade">Kai → Jade (QA gate)</option>
+          <option value="Jade → Deploy">Jade → Deploy</option>
+          <option value="Deploy → Flux → Iris">Deploy → Flux → Iris</option>
+          <option value="other">อื่นๆ / ภาพรวม</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 mb-1 block">คำแนะนำ / ไอเดีย</label>
+        <textarea id="sug-text" rows="3" class="input-field resize-none" placeholder="เช่น: ควรเพิ่ม Rena ก่อน Kai ด้วย, หรือ Jade ควร review content team ด้วย..."></textarea>
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 mb-1 block">จาก</label>
+        <input id="sug-author" type="text" class="input-field" placeholder="ชื่อ (optional)">
+      </div>
+    </div>
+    <div class="flex gap-3 pt-1">
+      <button onclick="closeSuggestion()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm font-medium rounded-lg transition">Cancel</button>
+      <button onclick="saveSuggestion()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold py-2 rounded-lg transition">Save Suggestion</button>
+    </div>
   </div>
 </div>
 
@@ -1027,6 +1152,7 @@ async function init() {
   loadProjects();
   loadSkillUsage();
   loadStatsBar();
+  loadSuggestions();
 }
 
 // ── Toast system ──────────────────────────────────────────
@@ -1150,16 +1276,233 @@ const avatarGradients = {
   pink:    'from-pink-400 to-rose-600',
 };
 
+const PIXEL_AVATARS = {
+  ace: `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <rect x="9" y="5" width="3" height="8" fill="#fbbf24" rx="1"/>
+    <rect x="14" y="2" width="4" height="11" fill="#fbbf24" rx="1"/>
+    <rect x="20" y="5" width="3" height="8" fill="#fbbf24" rx="1"/>
+    <rect x="8" y="10" width="16" height="3" fill="#fbbf24"/>
+    <rect x="15" y="1" width="2" height="3" fill="#fef08a"/>
+    <rect x="14" y="2" width="4" height="2" fill="#fef08a"/>
+    <rect x="6" y="12" width="20" height="18" rx="4" fill="#7dd3fc"/>
+    <rect x="10" y="17" width="4" height="4" rx="1" fill="#0369a1"/>
+    <rect x="18" y="17" width="4" height="4" rx="1" fill="#0369a1"/>
+    <rect x="8" y="22" width="4" height="2" rx="1" fill="#bae6fd"/>
+    <rect x="20" y="22" width="4" height="2" rx="1" fill="#bae6fd"/>
+    <rect x="12" y="25" width="8" height="2" rx="1" fill="#0369a1"/>
+  </svg>`,
+  kai: `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <rect x="4" y="4" width="24" height="10" rx="2" fill="#1e1b4b"/>
+    <rect x="5" y="5" width="22" height="8" rx="1" fill="#0f172a"/>
+    <rect x="7" y="7" width="3" height="2" fill="#818cf8"/>
+    <rect x="8" y="9" width="2" height="2" fill="#818cf8"/>
+    <rect x="12" y="9" width="6" height="2" fill="#6366f1"/>
+    <rect x="19" y="8" width="4" height="2" fill="#4f46e5"/>
+    <rect x="6" y="13" width="20" height="18" rx="4" fill="#818cf8"/>
+    <rect x="10" y="18" width="4" height="4" rx="1" fill="#1e1b4b"/>
+    <rect x="18" y="18" width="4" height="4" rx="1" fill="#1e1b4b"/>
+    <rect x="8" y="23" width="4" height="2" rx="1" fill="#c7d2fe"/>
+    <rect x="20" y="23" width="4" height="2" rx="1" fill="#c7d2fe"/>
+    <rect x="12" y="26" width="8" height="2" rx="1" fill="#1e1b4b"/>
+  </svg>`,
+  nova: `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <rect x="14" y="2" width="4" height="2" fill="#e879f9"/>
+    <rect x="12" y="4" width="8" height="2" fill="#e879f9"/>
+    <rect x="14" y="6" width="4" height="2" fill="#e879f9"/>
+    <rect x="12" y="4" width="2" height="4" fill="#e879f9"/>
+    <rect x="18" y="4" width="2" height="4" fill="#e879f9"/>
+    <rect x="8" y="4" width="2" height="2" fill="#f0abfc"/>
+    <rect x="22" y="4" width="2" height="2" fill="#f0abfc"/>
+    <rect x="6" y="12" width="20" height="18" rx="4" fill="#c084fc"/>
+    <rect x="10" y="17" width="4" height="4" rx="1" fill="#581c87"/>
+    <rect x="18" y="17" width="4" height="4" rx="1" fill="#581c87"/>
+    <rect x="11" y="18" width="2" height="1" fill="#f0abfc"/>
+    <rect x="19" y="18" width="2" height="1" fill="#f0abfc"/>
+    <rect x="8" y="22" width="4" height="2" rx="1" fill="#e9d5ff"/>
+    <rect x="20" y="22" width="4" height="2" rx="1" fill="#e9d5ff"/>
+    <rect x="11" y="25" width="10" height="2" rx="1" fill="#581c87"/>
+  </svg>`,
+  sam: `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <rect x="10" y="2" width="12" height="10" rx="5" fill="#10b981"/>
+    <rect x="11" y="3" width="10" height="8" rx="4" fill="#064e3b"/>
+    <rect x="13" y="5" width="6" height="4" rx="2" fill="#065f46"/>
+    <rect x="20" y="10" width="4" height="3" rx="1" fill="#10b981" transform="rotate(40 22 11)"/>
+    <rect x="6" y="13" width="20" height="17" rx="4" fill="#34d399"/>
+    <rect x="9" y="17" width="6" height="5" rx="2" fill="none" stroke="#065f46" stroke-width="1.5"/>
+    <rect x="17" y="17" width="6" height="5" rx="2" fill="none" stroke="#065f46" stroke-width="1.5"/>
+    <rect x="15" y="19" width="2" height="1" fill="#065f46"/>
+    <rect x="11" y="18" width="2" height="3" rx="1" fill="#064e3b"/>
+    <rect x="19" y="18" width="2" height="3" rx="1" fill="#064e3b"/>
+    <rect x="8" y="23" width="4" height="2" rx="1" fill="#a7f3d0"/>
+    <rect x="20" y="23" width="4" height="2" rx="1" fill="#a7f3d0"/>
+    <rect x="12" y="26" width="8" height="2" rx="1" fill="#064e3b"/>
+  </svg>`,
+  jade: `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <rect x="11" y="2" width="10" height="11" rx="3" fill="#e11d48"/>
+    <rect x="12" y="3" width="8" height="9" rx="2" fill="#be123c"/>
+    <rect x="13" y="8" width="3" height="2" fill="#fda4af"/>
+    <rect x="15" y="6" width="2" height="5" fill="#fda4af"/>
+    <rect x="15" y="10" width="5" height="2" fill="#fda4af" transform="rotate(45 17 11)"/>
+    <rect x="6" y="13" width="20" height="18" rx="4" fill="#fb7185"/>
+    <rect x="10" y="18" width="4" height="3" rx="1" fill="#9f1239"/>
+    <rect x="18" y="18" width="4" height="3" rx="1" fill="#9f1239"/>
+    <rect x="10" y="16" width="5" height="1" fill="#9f1239"/>
+    <rect x="17" y="16" width="5" height="1" fill="#9f1239"/>
+    <rect x="8" y="23" width="4" height="2" rx="1" fill="#fecdd3"/>
+    <rect x="20" y="23" width="4" height="2" rx="1" fill="#fecdd3"/>
+    <rect x="12" y="26" width="8" height="2" rx="1" fill="#9f1239"/>
+  </svg>`,
+  iris: `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <rect x="5" y="4" width="22" height="10" rx="2" fill="#d97706"/>
+    <rect x="6" y="5" width="10" height="8" rx="1" fill="#fef3c7"/>
+    <rect x="16" y="5" width="10" height="8" rx="1" fill="#fffbeb"/>
+    <rect x="15" y="4" width="2" height="10" fill="#92400e"/>
+    <rect x="7" y="7" width="7" height="1" fill="#d97706"/>
+    <rect x="7" y="9" width="5" height="1" fill="#d97706"/>
+    <rect x="17" y="7" width="7" height="1" fill="#d97706"/>
+    <rect x="17" y="9" width="5" height="1" fill="#d97706"/>
+    <rect x="6" y="14" width="20" height="17" rx="4" fill="#fbbf24"/>
+    <rect x="10" y="19" width="4" height="4" rx="1" fill="#92400e"/>
+    <rect x="18" y="19" width="4" height="4" rx="1" fill="#92400e"/>
+    <rect x="8" y="24" width="4" height="2" rx="1" fill="#fde68a"/>
+    <rect x="20" y="24" width="4" height="2" rx="1" fill="#fde68a"/>
+    <rect x="12" y="27" width="8" height="2" rx="1" fill="#92400e"/>
+  </svg>`,
+  pixel: `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <rect x="6" y="3" width="20" height="10" rx="5" fill="#ec4899"/>
+    <rect x="7" y="4" width="18" height="8" rx="4" fill="#db2777"/>
+    <rect x="9" y="5" width="4" height="4" rx="2" fill="#ef4444"/>
+    <rect x="14" y="4" width="4" height="4" rx="2" fill="#3b82f6"/>
+    <rect x="20" y="5" width="4" height="4" rx="2" fill="#22c55e"/>
+    <rect x="15" y="8" width="5" height="4" rx="2" fill="#9d174d"/>
+    <rect x="6" y="13" width="20" height="18" rx="4" fill="#f9a8d4"/>
+    <rect x="10" y="18" width="4" height="4" rx="1" fill="#9d174d"/>
+    <rect x="18" y="18" width="4" height="4" rx="1" fill="#9d174d"/>
+    <rect x="8" y="23" width="4" height="2" rx="1" fill="#fce7f3"/>
+    <rect x="20" y="23" width="4" height="2" rx="1" fill="#fce7f3"/>
+    <rect x="11" y="26" width="10" height="2" rx="1" fill="#9d174d"/>
+  </svg>`,
+  bolt: `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <rect x="15" y="2" width="7" height="7" fill="#fde047"/>
+    <rect x="12" y="7" width="11" height="3" fill="#fde047"/>
+    <rect x="12" y="8" width="7" height="5" fill="#fde047"/>
+    <rect x="8" y="11" width="8" height="3" fill="#fde047"/>
+    <rect x="8" y="3" width="2" height="2" fill="#fef9c3"/>
+    <rect x="22" y="5" width="2" height="2" fill="#fef9c3"/>
+    <rect x="6" y="14" width="20" height="17" rx="4" fill="#fde047"/>
+    <rect x="10" y="19" width="4" height="4" rx="1" fill="#713f12"/>
+    <rect x="18" y="19" width="4" height="4" rx="1" fill="#713f12"/>
+    <rect x="10" y="17" width="5" height="1" rx="0.5" fill="#713f12"/>
+    <rect x="17" y="17" width="5" height="1" rx="0.5" fill="#713f12" transform="rotate(-8 19 17)"/>
+    <rect x="8" y="24" width="4" height="2" rx="1" fill="#fef9c3"/>
+    <rect x="20" y="24" width="4" height="2" rx="1" fill="#fef9c3"/>
+    <rect x="10" y="27" width="12" height="2" rx="1" fill="#713f12"/>
+  </svg>`,
+  rena: `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <rect x="8" y="4" width="6" height="6" rx="3" fill="#fb7185"/>
+    <rect x="8" y="3" width="3" height="4" rx="1" fill="#fb7185"/>
+    <rect x="11" y="3" width="3" height="4" rx="1" fill="#fb7185"/>
+    <rect x="9" y="9" width="4" height="2" fill="#fb7185"/>
+    <rect x="11" y="10" width="2" height="2" fill="#fb7185"/>
+    <rect x="18" y="4" width="6" height="6" rx="3" fill="#f43f5e"/>
+    <rect x="18" y="3" width="3" height="4" rx="1" fill="#f43f5e"/>
+    <rect x="21" y="3" width="3" height="4" rx="1" fill="#f43f5e"/>
+    <rect x="19" y="9" width="4" height="2" fill="#f43f5e"/>
+    <rect x="21" y="10" width="2" height="2" fill="#f43f5e"/>
+    <rect x="6" y="13" width="20" height="18" rx="4" fill="#fda4af"/>
+    <rect x="10" y="18" width="4" height="4" rx="2" fill="#be123c"/>
+    <rect x="18" y="18" width="4" height="4" rx="2" fill="#be123c"/>
+    <rect x="11" y="19" width="1" height="1" fill="#fce7f3"/>
+    <rect x="19" y="19" width="1" height="1" fill="#fce7f3"/>
+    <rect x="7" y="23" width="5" height="3" rx="2" fill="#fecdd3"/>
+    <rect x="20" y="23" width="5" height="3" rx="2" fill="#fecdd3"/>
+    <rect x="11" y="26" width="10" height="2" rx="1" fill="#be123c"/>
+  </svg>`,
+  max: `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <rect x="5" y="3" width="22" height="10" rx="2" fill="#0369a1"/>
+    <rect x="6" y="4" width="20" height="8" rx="1" fill="#082f49"/>
+    <rect x="7" y="5" width="5" height="1" fill="#38bdf8"/>
+    <rect x="7" y="6" width="2" height="1" fill="#38bdf8"/>
+    <rect x="9" y="6" width="1" height="1" fill="#38bdf8"/>
+    <rect x="7" y="7" width="2" height="1" fill="#38bdf8"/>
+    <rect x="9" y="7" width="1" height="1" fill="#38bdf8"/>
+    <rect x="7" y="8" width="5" height="1" fill="#38bdf8"/>
+    <rect x="14" y="6" width="4" height="1" fill="#7dd3fc"/>
+    <rect x="14" y="8" width="4" height="1" fill="#7dd3fc"/>
+    <rect x="19" y="5" width="5" height="5" rx="1" fill="#0ea5e9"/>
+    <rect x="6" y="13" width="20" height="18" rx="4" fill="#7dd3fc"/>
+    <rect x="9" y="17" width="6" height="5" rx="2" fill="none" stroke="#0369a1" stroke-width="1.5"/>
+    <rect x="17" y="17" width="6" height="5" rx="2" fill="none" stroke="#0369a1" stroke-width="1.5"/>
+    <rect x="15" y="19" width="2" height="1" fill="#0369a1"/>
+    <rect x="11" y="18" width="2" height="3" rx="1" fill="#0369a1"/>
+    <rect x="19" y="18" width="2" height="3" rx="1" fill="#0369a1"/>
+    <rect x="8" y="24" width="4" height="2" rx="1" fill="#bae6fd"/>
+    <rect x="20" y="24" width="4" height="2" rx="1" fill="#bae6fd"/>
+    <rect x="12" y="27" width="8" height="2" rx="1" fill="#0369a1"/>
+  </svg>`,
+  sage: `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <rect x="5" y="8" width="22" height="4" rx="1" fill="#065f46"/>
+    <rect x="9" y="3" width="14" height="7" rx="2" fill="#064e3b"/>
+    <rect x="10" y="4" width="12" height="5" rx="1" fill="#047857"/>
+    <rect x="23" y="6" width="2" height="7" fill="#fbbf24"/>
+    <rect x="22" y="12" width="5" height="2" rx="1" fill="#fbbf24"/>
+    <rect x="24" y="14" width="2" height="3" fill="#fbbf24"/>
+    <rect x="6" y="13" width="20" height="17" rx="4" fill="#6ee7b7"/>
+    <rect x="10" y="18" width="4" height="4" rx="1" fill="#064e3b"/>
+    <rect x="18" y="18" width="4" height="4" rx="1" fill="#064e3b"/>
+    <rect x="8" y="23" width="4" height="2" rx="1" fill="#a7f3d0"/>
+    <rect x="20" y="23" width="4" height="2" rx="1" fill="#a7f3d0"/>
+    <rect x="11" y="26" width="10" height="2" rx="1" fill="#064e3b"/>
+  </svg>`,
+  vera: `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <rect x="8" y="3" width="16" height="11" rx="2" fill="#7c3aed"/>
+    <rect x="9" y="5" width="14" height="8" rx="1" fill="#ede9fe"/>
+    <rect x="13" y="2" width="6" height="4" rx="2" fill="#5b21b6"/>
+    <rect x="14" y="3" width="4" height="2" rx="1" fill="#7c3aed"/>
+    <rect x="10" y="7" width="9" height="1" fill="#7c3aed"/>
+    <rect x="10" y="9" width="7" height="1" fill="#7c3aed"/>
+    <rect x="10" y="11" width="8" height="1" fill="#7c3aed"/>
+    <rect x="22" y="5" width="2" height="8" rx="1" fill="#a78bfa"/>
+    <rect x="22" y="12" width="2" height="3" rx="1" fill="#f59e0b"/>
+    <rect x="6" y="14" width="20" height="17" rx="4" fill="#ddd6fe"/>
+    <rect x="10" y="19" width="4" height="3" rx="1" fill="#5b21b6"/>
+    <rect x="18" y="19" width="4" height="3" rx="1" fill="#5b21b6"/>
+    <rect x="8" y="24" width="4" height="2" rx="1" fill="#ede9fe"/>
+    <rect x="20" y="24" width="4" height="2" rx="1" fill="#ede9fe"/>
+    <rect x="12" y="27" width="8" height="2" rx="1" fill="#5b21b6"/>
+  </svg>`,
+  flux: `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <rect x="5" y="3" width="22" height="11" rx="2" fill="#312e81"/>
+    <rect x="6" y="4" width="20" height="9" rx="1" fill="#1e1b4b"/>
+    <rect x="8" y="8" width="3" height="5" fill="#818cf8"/>
+    <rect x="12" y="6" width="3" height="7" fill="#6366f1"/>
+    <rect x="16" y="7" width="3" height="6" fill="#818cf8"/>
+    <rect x="20" y="5" width="3" height="8" fill="#4f46e5"/>
+    <rect x="7" y="12" width="18" height="1" fill="#4338ca"/>
+    <rect x="6" y="14" width="20" height="17" rx="4" fill="#6366f1"/>
+    <rect x="10" y="19" width="4" height="3" rx="1" fill="#1e1b4b"/>
+    <rect x="18" y="19" width="4" height="3" rx="1" fill="#1e1b4b"/>
+    <rect x="10" y="20" width="4" height="1" fill="#818cf8"/>
+    <rect x="18" y="20" width="4" height="1" fill="#818cf8"/>
+    <rect x="8" y="24" width="4" height="2" rx="1" fill="#c7d2fe"/>
+    <rect x="20" y="24" width="4" height="2" rx="1" fill="#c7d2fe"/>
+    <rect x="12" y="27" width="8" height="2" rx="1" fill="#1e1b4b"/>
+  </svg>`,
+};
+
 function memberCard(id, m) {
   const c = colorMap[m.color] || colorMap.indigo;
   const grad = avatarGradients[m.color] || avatarGradients.indigo;
   const initial = (m.name || '?')[0].toUpperCase();
+  const delayClass = `delay-${(m.order||0) % 13}`;
+  const sprite = PIXEL_AVATARS[id];
+  const avatarInner = sprite
+    ? `<div class="pixel-avatar ${delayClass}">${sprite}</div>`
+    : `<div class="avatar-ring w-10 h-10 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center text-white font-bold text-base">${initial}</div>`;
   return `
     <div onclick="openEditMember('${id}')" class="member-card cursor-pointer rounded-xl p-4 flex items-start gap-3.5" data-color="${m.color || 'indigo'}">
       <div class="avatar-wrap">
-        <div class="avatar-ring w-10 h-10 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center text-white font-bold text-base">
-          ${initial}
-        </div>
+        ${avatarInner}
         <span class="avatar-status online"></span>
       </div>
       <div class="flex-1 min-w-0">
@@ -1609,6 +1952,86 @@ window.syncProjects = async function() {
     await setDoc(doc(db, 'team-projects', p.id), p);
   }
   alert('Projects synced.');
+}
+
+// ─── Flow Suggestions ────────────────────────────────
+window.openSuggestion = function() {
+  document.getElementById('suggestion-modal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('sug-text').focus(), 100);
+}
+
+window.closeSuggestion = function() {
+  document.getElementById('suggestion-modal').classList.add('hidden');
+}
+
+window.saveSuggestion = async function() {
+  const text = document.getElementById('sug-text').value.trim();
+  if (!text) { showToast('กรอก suggestion ก่อนนะ', 'warning'); return; }
+  await addDoc(collection(db, 'flow-suggestions'), {
+    node: document.getElementById('sug-node').value,
+    text,
+    author: document.getElementById('sug-author').value.trim() || 'Anonymous',
+    upvotes: 0,
+    timestamp: serverTimestamp()
+  });
+  document.getElementById('sug-text').value = '';
+  document.getElementById('sug-node').value = '';
+  document.getElementById('sug-author').value = '';
+  closeSuggestion();
+  showToast('Suggestion saved!', 'success');
+}
+
+window.upvoteSuggestion = async function(id, current) {
+  await updateDoc(doc(db, 'flow-suggestions', id), { upvotes: (current || 0) + 1 });
+}
+
+window.deleteSuggestion = async function(id) {
+  if (!confirm('ลบ suggestion นี้?')) return;
+  await deleteDoc(doc(db, 'flow-suggestions', id));
+}
+
+function loadSuggestions() {
+  const q = query(collection(db, 'flow-suggestions'), orderBy('timestamp', 'desc'));
+  onSnapshot(q, snap => {
+    const list = document.getElementById('suggestions-list');
+    const countEl = document.getElementById('suggestion-count');
+    if (!list) return;
+    if (snap.empty) {
+      list.innerHTML = '<p class="text-gray-600 text-xs">ยังไม่มี suggestion — กด "Suggest" เพื่อเสนอ flow ใหม่</p>';
+      countEl?.classList.add('hidden');
+      return;
+    }
+    countEl.textContent = snap.size;
+    countEl.classList.remove('hidden');
+    list.innerHTML = snap.docs.map(d => {
+      const s = d.data();
+      const time = s.timestamp?.toDate ? s.timestamp.toDate().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }) : '';
+      const nodeTag = s.node ? `<span class="text-xs bg-indigo-900/50 text-indigo-300 border border-indigo-800/40 px-2 py-0.5 rounded-md font-mono">${escHtml(s.node)}</span>` : '';
+      return `
+        <div class="suggestion-item rounded-xl p-3 space-y-2">
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex-1 space-y-1.5">
+              ${nodeTag}
+              <p class="text-gray-200 text-sm leading-relaxed">${escHtml(s.text)}</p>
+              <div class="flex items-center gap-2 text-xs text-gray-600">
+                <span>— ${escHtml(s.author || 'Anonymous')}</span>
+                <span>·</span>
+                <span>${time}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
+              <button onclick="upvoteSuggestion('${d.id}', ${s.upvotes||0})" class="flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-400 transition px-1.5 py-1 rounded-lg hover:bg-indigo-900/30">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                ${s.upvotes || 0}
+              </button>
+              <button onclick="deleteSuggestion('${d.id}')" class="text-gray-700 hover:text-red-400 transition px-1 py-1 rounded-lg hover:bg-red-900/20">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  });
 }
 
 function renderProjects(projects) {
