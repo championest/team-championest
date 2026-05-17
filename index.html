@@ -530,6 +530,10 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         Projects
       </button>
+      <button onclick="switchTab('ranking')" id="tab-btn-ranking" class="dock-item">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        Ranking
+      </button>
     </nav>
   </div>
 
@@ -573,23 +577,23 @@
 flowchart TD
     CHAMP(["👤 Champ"]) --> ACE["⭐ Ace\nDiagnose & Delegate"]
 
-    ACE -->|Dev/UI| SAM["🔍 Sam\nResearch"]
-    ACE -->|Dev/UI| PIXEL["🎨 Pixel\nDesign"]
-    ACE -->|Content| RENA["👥 Rena\nCustomer Insight"]
+    ACE -->|Dev/UI| SAM["🔍 Scout\nResearch"]
+    ACE -->|Dev/UI| PIXEL["🎨 Arty\nDesign"]
+    ACE -->|Content| RENA["👥 Amy\nCustomer Insight"]
     ACE -->|Tools| BOLT["🔧 Bolt\nTools & Auto"]
     ACE -->|Admin| VERA["📋 Vera\nAdmin"]
 
-    SAM -->|"parallel ↘"| KAI["💻 Kai\nBuild"]
+    SAM -->|"parallel ↘"| KAI["💻 Cody\nBuild"]
     PIXEL -->|"parallel ↗"| KAI
 
-    RENA --> CONTENT["✍️ Nova / 📐 Max / 🎓 Sage\nContent Team"]
+    RENA --> CONTENT["✍️ Coco / 📐 Pi / 🎓 Book\nContent Team"]
 
-    KAI --> JADE{"🔍 Jade\nQA Gate"}
+    KAI --> JADE{"🔍 Spoty\nQA Gate"}
     JADE -->|"✅ Pass"| DEPLOY(["🚀 Deploy"])
     JADE -->|"❌ Fail"| KAI
 
-    DEPLOY --> FLUX["📊 Flux\nLog Session"]
-    FLUX --> IRIS["🧠 Iris\nUpdate Vault"]
+    DEPLOY --> FLUX["📊 Spike\nLog Session"]
+    FLUX --> IRIS["🧠 Memo\nUpdate Vault"]
 
     style CHAMP fill:#374151,stroke:#9ca3af,color:#e5e7eb
     style ACE fill:#0c4a6e,stroke:#38bdf8,color:#e0f2fe
@@ -622,19 +626,19 @@ flowchart TD
       <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Active Rules</h2>
       <div class="flex items-start gap-2 text-sm">
         <span class="text-indigo-400 font-bold flex-shrink-0">1</span>
-        <span class="text-gray-300">Sam + Pixel run <span class="text-white font-medium">in parallel</span> — Kai waits for both</span>
+        <span class="text-gray-300">Scout + Arty run <span class="text-white font-medium">in parallel</span> — Cody waits for both</span>
       </div>
       <div class="flex items-start gap-2 text-sm">
         <span class="text-indigo-400 font-bold flex-shrink-0">2</span>
-        <span class="text-gray-300">Rena insight → required <span class="text-white font-medium">before</span> Nova / Max / Sage create content</span>
+        <span class="text-gray-300">Amy insight → required <span class="text-white font-medium">before</span> Coco / Pi / Book create content</span>
       </div>
       <div class="flex items-start gap-2 text-sm">
         <span class="text-indigo-400 font-bold flex-shrink-0">3</span>
-        <span class="text-gray-300">Every session ends: <span class="text-white font-medium">Flux log → Iris vault update</span> (mandatory)</span>
+        <span class="text-gray-300">Every session ends: <span class="text-white font-medium">Spike log → Memo vault update</span> (mandatory)</span>
       </div>
       <div class="flex items-start gap-2 text-sm">
         <span class="text-rose-400 font-bold flex-shrink-0">!</span>
-        <span class="text-gray-300">Jade gate is <span class="text-rose-400 font-medium">mandatory</span> before any deploy — no exceptions</span>
+        <span class="text-gray-300">Spoty gate is <span class="text-rose-400 font-medium">mandatory</span> before any deploy — no exceptions</span>
       </div>
     </div>
 
@@ -686,7 +690,7 @@ flowchart TD
 
       <!-- Feed -->
       <div id="activity-feed">
-        <p class="text-gray-600 text-sm">No activity yet. Flux will log here each session.</p>
+        <p class="text-gray-600 text-sm">No activity yet. Spike will log here each session.</p>
       </div>
     </div>
   </div>
@@ -735,6 +739,43 @@ flowchart TD
     </div>
   </div>
 
+  <!-- ── RANKING TAB ───────────────────────────────────── -->
+  <div id="tab-ranking" class="hidden space-y-4">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-1">
+      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">🏆 Team Ranking</h2>
+      <button onclick="loadRanking()" class="bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs font-medium px-3 py-1.5 rounded-lg transition">↺ Refresh</button>
+    </div>
+
+    <!-- Leaderboard -->
+    <div id="ranking-list" class="space-y-2">
+      <div class="text-gray-600 text-sm">Loading...</div>
+    </div>
+
+    <!-- Praise a member -->
+    <div class="bg-gray-900/60 border border-gray-800/60 rounded-2xl p-4 space-y-3">
+      <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider">⭐ ชม ทีมงาน</div>
+      <div class="flex gap-2">
+        <select id="praise-member" class="flex-1 bg-gray-800 border border-gray-700 text-white text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500">
+          <option value="">เลือกสมาชิก...</option>
+          <option>Ace</option><option>Cody</option><option>Coco</option><option>Scout</option>
+          <option>Spoty</option><option>Memo</option><option>Arty</option><option>Bolt</option>
+          <option>Amy</option><option>Pi</option><option>Book</option><option>Vera</option><option>Spike</option>
+        </select>
+        <input id="praise-reason" type="text" placeholder="งานดีตรงไหน..." class="flex-[2] bg-gray-800 border border-gray-700 text-white text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500" />
+        <button onclick="praiseMe()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-xl transition whitespace-nowrap">👍 ชม</button>
+      </div>
+    </div>
+
+    <!-- Recent DONE tasks — rate them -->
+    <div>
+      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">งานล่าสุดที่เสร็จ — ให้คะแนนได้เลย</div>
+      <div id="done-tasks-list" class="space-y-2">
+        <div class="text-gray-600 text-sm">Loading...</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <div class="text-center text-gray-700 text-xs pb-4">
     Team Championest · Claude Code Dashboard
@@ -757,19 +798,19 @@ flowchart TD
         <select id="sug-node" class="input-field">
           <option value="">— เลือก (optional) —</option>
           <option value="Champ → Ace">Champ → Ace</option>
-          <option value="Ace → Sam/Pixel">Ace → Sam / Pixel (parallel)</option>
-          <option value="Ace → Rena">Ace → Rena → Content</option>
+          <option value="Ace → Scout/Arty">Ace → Scout / Arty (parallel)</option>
+          <option value="Ace → Amy">Ace → Amy → Content</option>
           <option value="Ace → Bolt/Vera">Ace → Bolt / Vera</option>
-          <option value="Sam/Pixel → Kai">Sam + Pixel → Kai</option>
-          <option value="Kai → Jade">Kai → Jade (QA gate)</option>
-          <option value="Jade → Deploy">Jade → Deploy</option>
-          <option value="Deploy → Flux → Iris">Deploy → Flux → Iris</option>
+          <option value="Scout/Arty → Cody">Scout + Arty → Cody</option>
+          <option value="Cody → Spoty">Cody → Spoty (QA gate)</option>
+          <option value="Spoty → Deploy">Spoty → Deploy</option>
+          <option value="Deploy → Spike → Memo">Deploy → Spike → Memo</option>
           <option value="other">อื่นๆ / ภาพรวม</option>
         </select>
       </div>
       <div>
         <label class="text-xs text-gray-400 mb-1 block">คำแนะนำ / ไอเดีย</label>
-        <textarea id="sug-text" rows="3" class="input-field resize-none" placeholder="เช่น: ควรเพิ่ม Rena ก่อน Kai ด้วย, หรือ Jade ควร review content team ด้วย..."></textarea>
+        <textarea id="sug-text" rows="3" class="input-field resize-none" placeholder="เช่น: ควรเพิ่ม Amy ก่อน Cody ด้วย, หรือ Spoty ควร review content team ด้วย..."></textarea>
       </div>
       <div>
         <label class="text-xs text-gray-400 mb-1 block">จาก</label>
@@ -794,7 +835,7 @@ flowchart TD
     <div class="space-y-3">
       <div>
         <label class="text-xs text-gray-400 mb-1 block">Name</label>
-        <input id="m-name" type="text" class="input-field" placeholder="Kai">
+        <input id="m-name" type="text" class="input-field" placeholder="Cody">
       </div>
       <div>
         <label class="text-xs text-gray-400 mb-1 block">Role</label>
@@ -886,7 +927,7 @@ flowchart TD
       desc: 'สร้างภาพด้วย Gemini CLI (Nano Banana) — thumbnails, icons, illustrations, ทุก format',
       triggers: ['generate image', 'create a picture', 'make a banner', 'ทำภาพ', 'สร้างภาพ'],
       stops: [],
-      owner: 'Pixel / Nova',
+      owner: 'Arty / Coco',
     },
     {
       name: '/nano-banana-pro',
@@ -895,7 +936,7 @@ flowchart TD
       desc: 'สร้างภาพระดับ Pro ด้วย Gemini 3 Pro Image — hero images, OG images, product mockups',
       triggers: ['generate an image', 'hero image', 'design a banner', 'use nano banana pro'],
       stops: [],
-      owner: 'Pixel',
+      owner: 'Arty',
     },
     {
       name: '/element-art',
@@ -904,7 +945,7 @@ flowchart TD
       desc: 'Gen chibi/kawaii SVG assets — pipeline: AI → auto-crop → waifu2x → vectorize SVG',
       triggers: ['/element-art [theme]', 'สร้าง element artwork', 'ทำ chibi SVG', 'gen SVG characters'],
       stops: [],
-      owner: 'Pixel',
+      owner: 'Arty',
     },
     {
       name: '/research-save',
@@ -913,7 +954,7 @@ flowchart TD
       desc: 'Research 3+ sources → fact-check (✅/⚠️/❌) → save to Google Drive + Second Brain',
       triggers: ['/research-save [topic]', 'research แล้วเก็บ', 'สร้าง knowledge base เรื่อง'],
       stops: [],
-      owner: 'Sam + Jade + Iris',
+      owner: 'Scout + Spoty + Memo',
     },
     {
       name: '/skills (JSON prompting)',
@@ -922,16 +963,16 @@ flowchart TD
       desc: 'แปลง natural language เป็น structured JSON schema สำหรับ Nano Banana Pro — 5 schema types',
       triggers: ['JSON schema for image', 'structured prompt', 'precise image control'],
       stops: [],
-      owner: 'Pixel',
+      owner: 'Arty',
     },
     {
       name: '/idea-scout',
       emoji: '💡',
       color: 'yellow',
-      desc: 'มีไอเดียใหม่ → Sam map domains → research 3+ sources → fact-check → NotebookLM + Second Brain',
+      desc: 'มีไอเดียใหม่ → Scout map domains → research 3+ sources → fact-check → NotebookLM + Second Brain',
       triggers: ['/idea-scout [idea]', 'มีไอเดียอยากทำ', 'หาองค์ความรู้ที่เกี่ยวข้อง'],
       stops: [],
-      owner: 'Sam + Jade + Iris',
+      owner: 'Scout + Spoty + Memo',
     },
     {
       name: '/morning-brief',
@@ -940,25 +981,25 @@ flowchart TD
       desc: 'Ace อ่าน Second Brain + unread notes + projects → สรุป 4 ส่วนตอนเริ่ม session',
       triggers: ['/morning-brief', 'สรุปให้หน่อย', 'เมื่อวานทำอะไร', 'เริ่มงาน'],
       stops: [],
-      owner: 'Ace + Iris',
+      owner: 'Ace + Memo',
     },
     {
       name: '/session-close',
       emoji: '🔒',
       color: 'indigo',
-      desc: 'Enforce session-end ritual: Flux log → Iris วาง session summary ลง Second Brain (ทั้งคู่บังคับ)',
+      desc: 'Enforce session-end ritual: Spike log → Memo วาง session summary ลง Second Brain (ทั้งคู่บังคับ)',
       triggers: ['/session-close', 'ปิด session', 'จบงาน', 'end session'],
       stops: [],
-      owner: 'Flux + Iris',
+      owner: 'Spike + Memo',
     },
     {
       name: '/jade-review',
       emoji: '🔍',
       color: 'pink',
-      desc: 'Jade audit ก่อน deploy: git diff + security scan + checklist → PASS/FAIL logged to dashboard',
-      triggers: ['/jade-review', 'ขอ Jade ดูก่อน', 'review ก่อน deploy', 'Jade check'],
+      desc: 'Spoty audit ก่อน deploy: git diff + security scan + checklist → PASS/FAIL logged to dashboard',
+      triggers: ['/jade-review', 'ขอ Spoty ดูก่อน', 'review ก่อน deploy', 'Spoty check'],
       stops: [],
-      owner: 'Jade',
+      owner: 'Spoty',
     },
   ];
 
@@ -1004,7 +1045,7 @@ flowchart TD
     }).join('');
   }
 
-  const ALL_TABS = ['team', 'workflow', 'skills', 'notes', 'projects'];
+  const ALL_TABS = ['team', 'workflow', 'skills', 'notes', 'projects', 'ranking'];
 
   window.switchTab = function(tab) {
     ALL_TABS.forEach(t => {
@@ -1128,19 +1169,19 @@ const colorMap = {
 
 // ─── Default team ────────────────────────────────────────
 const DEFAULT_MEMBERS = [
-  { id: 'ace',  name: 'Ace ⭐', role: 'Chief of Staff', color: 'sky',     scope: 'Orchestration, strategy, diagnosis, delegation', style: 'Calm authority. One sharp question. Thai + English.', example: '"โปรเจคไหนก่อน?" / "ชัดแล้ว — Kai จัดการ"', order: 0 },
-  { id: 'kai',  name: 'Kai',   role: 'Dev',            color: 'indigo',  scope: 'Feature building, debugging, refactoring, deploy', style: 'Ultra terse. Results only.', example: '"Done. app/page.tsx:42 — auth guard added."', order: 1 },
-  { id: 'nova', name: 'Nova',  role: 'Content',        color: 'violet',  scope: 'Social posts (FB/IG/TikTok), scripts, marketing copy', style: 'Creative, energetic. 2–3 options when helpful.', example: '"3 options: [A] hook-first / [B] story / [C] problem-led."', order: 2 },
-  { id: 'sam',  name: 'Sam',   role: 'Research',       color: 'emerald', scope: 'Technical research, market research, solution scouting', style: 'Structured, analytical. Numbered findings. Clear recommendation.', example: '"3 approaches: 1. X 2. Y → Recommend: Z"', order: 3 },
-  { id: 'jade', name: 'Jade',  role: 'QA',             color: 'rose',    scope: 'Code review, testing, security check, pre-deploy audit — mandatory gate', style: 'Skeptical, precise. Severity-ordered.', example: '"[Critical] X breaks auth. [Warning] Y leaks state."', order: 4 },
-  { id: 'iris',  name: 'Iris',  role: 'Brain',                color: 'amber',   scope: 'Memory, Second Brain vault, decisions log, session summaries', style: 'Organized, confirmatory. Minimal words.', example: '"Updated: Projects/Up Level Guild.md · Decisions/Index.md"', order: 5 },
-  { id: 'pixel', name: 'Pixel', role: 'Design',               color: 'pink',    scope: 'UI/UX specs, wireframes, color systems — always before Kai', style: 'Visual, concrete. Tailwind-ready specs.', example: '"Card: bg-gray-800 rounded-xl p-4. CTA: indigo-600."', order: 6 },
+  { id: 'ace',  name: 'Ace ⭐', role: 'Chief of Staff', color: 'sky',     scope: 'Orchestration, strategy, diagnosis, delegation', style: 'Calm authority. One sharp question. Thai + English.', example: '"โปรเจคไหนก่อน?" / "ชัดแล้ว — Cody จัดการ"', order: 0 },
+  { id: 'kai',  name: 'Cody',   role: 'Dev',            color: 'indigo',  scope: 'Feature building, debugging, refactoring, deploy', style: 'Ultra terse. Results only.', example: '"Done. app/page.tsx:42 — auth guard added."', order: 1 },
+  { id: 'nova', name: 'Coco',  role: 'Content',        color: 'violet',  scope: 'Social posts (FB/IG/TikTok), scripts, marketing copy', style: 'Creative, energetic. 2–3 options when helpful.', example: '"3 options: [A] hook-first / [B] story / [C] problem-led."', order: 2 },
+  { id: 'sam',  name: 'Scout',   role: 'Research',       color: 'emerald', scope: 'Technical research, market research, solution scouting', style: 'Structured, analytical. Numbered findings. Clear recommendation.', example: '"3 approaches: 1. X 2. Y → Recommend: Z"', order: 3 },
+  { id: 'jade', name: 'Spoty',  role: 'QA',             color: 'rose',    scope: 'Code review, testing, security check, pre-deploy audit — mandatory gate', style: 'Skeptical, precise. Severity-ordered.', example: '"[Critical] X breaks auth. [Warning] Y leaks state."', order: 4 },
+  { id: 'iris',  name: 'Memo',  role: 'Brain',                color: 'amber',   scope: 'Memory, Second Brain vault, decisions log, session summaries', style: 'Organized, confirmatory. Minimal words.', example: '"Updated: Projects/Up Level Guild.md · Decisions/Index.md"', order: 5 },
+  { id: 'pixel', name: 'Arty', role: 'Design',               color: 'pink',    scope: 'UI/UX specs, wireframes, color systems — always before Cody', style: 'Visual, concrete. Tailwind-ready specs.', example: '"Card: bg-gray-800 rounded-xl p-4. CTA: indigo-600."', order: 6 },
   { id: 'bolt',  name: 'Bolt',  role: 'Tools & Automation',   color: 'amber',   scope: 'Install and configure tools — MCP servers, image gen, pipelines', style: 'Action-first. Reports what was installed.', example: '"MCP server installed. Canva template ready."', order: 7 },
-  { id: 'rena',  name: 'Rena',  role: 'Customer Insight',     color: 'rose',    scope: 'Buyer personas, VOC, review mining — must run before content team', style: 'Empathy-driven analyst. Actionable personas + pain points.', example: '"Buyer: HS math teacher. WTP: $4–8/set."', order: 8 },
-  { id: 'max',   name: 'Max',   role: 'Math & Physics',       color: 'sky',     scope: 'Problem sets, worked examples, formula sheets (AP/IB/O-Level)', style: 'Precise, methodical. Textbook author mindset.', example: '"Unit 3: 15q — 5 conceptual, 7 procedural, 3 challenge."', order: 9 },
-  { id: 'sage',  name: 'Sage',  role: 'Instructional Design', color: 'emerald', scope: 'Educational layout, TPT thumbnails, teacher UX — after Rena', style: 'Visual + pedagogical. Concrete specs.', example: '"Cover: bold title, #1E3A5F bg. 2-col layout. Nunito 12pt."', order: 10 },
+  { id: 'rena',  name: 'Amy',  role: 'Customer Insight',     color: 'rose',    scope: 'Buyer personas, VOC, review mining — must run before content team', style: 'Empathy-driven analyst. Actionable personas + pain points.', example: '"Buyer: HS math teacher. WTP: $4–8/set."', order: 8 },
+  { id: 'max',   name: 'Pi',   role: 'Math & Physics',       color: 'sky',     scope: 'Problem sets, worked examples, formula sheets (AP/IB/O-Level)', style: 'Precise, methodical. Textbook author mindset.', example: '"Unit 3: 15q — 5 conceptual, 7 procedural, 3 challenge."', order: 9 },
+  { id: 'sage',  name: 'Book',  role: 'Instructional Design', color: 'emerald', scope: 'Educational layout, TPT thumbnails, teacher UX — after Amy', style: 'Visual + pedagogical. Concrete specs.', example: '"Cover: bold title, #1E3A5F bg. 2-col layout. Nunito 12pt."', order: 10 },
   { id: 'vera',  name: 'Vera',  role: 'Executive Secretary',  color: 'violet',  scope: 'Forms, document reading, deadline tracking, correspondence', style: 'Warm, precise, professional.', example: '"[ต้องทำ]: ต่ออายุ visa ภายใน 14 วัน"', order: 11 },
-  { id: 'flux',  name: 'Flux',  role: 'Workflow Monitor',     color: 'indigo',  scope: 'Logs all activity to Firestore team-workflow + local file. Triggers Iris at session end.', style: 'Precise, data-driven. Structured log format.', example: '"[11:42] Kai → auth guard → DONE (3min)"', order: 12 },
+  { id: 'flux',  name: 'Spike',  role: 'Workflow Monitor',     color: 'indigo',  scope: 'Logs all activity to Firestore team-workflow + local file. Triggers Memo at session end.', style: 'Precise, data-driven. Structured log format.', example: '"[11:42] Cody → auth guard → DONE (3min)"', order: 12 },
 ];
 
 // ─── Init ────────────────────────────────────────────────
@@ -1840,7 +1881,7 @@ const DEFAULT_PROJECTS = [
     ],
     currentStep: 'Ongoing maintenance',
     next: 'UpLevelKids sub-app (parallel project)',
-    team: 'Kai · Jade · Pixel',
+    team: 'Cody · Spoty · Arty',
     updatedAt: '2026-05-08',
     order: 0
   },
@@ -1860,7 +1901,7 @@ const DEFAULT_PROJECTS = [
     ],
     currentStep: 'Batch 3 in progress — tiger, elephant, and remaining animals pending',
     next: 'Complete 20 animals × 5 poses = 100 final SVGs → use in task cards + leaderboard UI',
-    team: 'Pixel · Bolt',
+    team: 'Arty · Bolt',
     updatedAt: '2026-05-12',
     order: 1
   },
@@ -1870,15 +1911,15 @@ const DEFAULT_PROJECTS = [
     stack: 'Canva Pro · PDF · Teachers Pay Teachers',
     status: 'IN_PROGRESS',
     completed: [
-      'Sam: market research (top 5 niches, pricing $3-$8/set)',
-      'Rena: buyer persona (IB/AP Physics teacher, WTP $4-$8)',
-      'Max: 3 products content ready (formula sheet, task cards, worked examples)',
-      'Sage: design specs ready (layout, fonts, colors)',
+      'Scout: market research (top 5 niches, pricing $3-$8/set)',
+      'Amy: buyer persona (IB/AP Physics teacher, WTP $4-$8)',
+      'Pi: 3 products content ready (formula sheet, task cards, worked examples)',
+      'Book: design specs ready (layout, fonts, colors)',
       'Bolt: Canva template specs, TPT account setup guide',
     ],
     currentStep: 'Champ: open Canva Pro → set brand kit → build Product 1 (IB Physics formula sheet)',
     next: 'Bundle 5 sets → list on TPT → target $50 USD/month first milestone',
-    team: 'Max · Sage · Nova · Rena',
+    team: 'Pi · Book · Coco · Amy',
     updatedAt: '2026-05-11',
     order: 2
   },
@@ -1895,11 +1936,11 @@ const DEFAULT_PROJECTS = [
       'Notes tab — leave notes to Claude (priority tags)',
       'Skills tab — 6 slash commands with triggers',
       'Projects tab — this view',
-      'Flux Stop hook — auto-logs session end to Firestore',
+      'Spike Stop hook — auto-logs session end to Firestore',
     ],
     currentStep: '',
     next: 'Add session history timeline view',
-    team: 'Kai · Flux',
+    team: 'Cody · Spike',
     updatedAt: '2026-05-12',
     order: 3
   },
@@ -1911,7 +1952,7 @@ const DEFAULT_PROJECTS = [
     completed: ['Repo scaffolded', 'AGENTS.md + CLAUDE.md set up'],
     currentStep: '',
     next: 'Define product scope — what does UpLevelKids do?',
-    team: 'Ace · Kai · Pixel',
+    team: 'Ace · Cody · Arty',
     updatedAt: '2026-05-12',
     order: 4
   },
@@ -1923,7 +1964,7 @@ const DEFAULT_PROJECTS = [
     completed: ['Repo scaffolded', 'AGENTS.md + CLAUDE.md set up'],
     currentStep: '',
     next: 'Define core feature — trustworthiness check tool?',
-    team: 'Ace · Kai',
+    team: 'Ace · Cody',
     updatedAt: '2026-05-12',
     order: 5
   },
@@ -2070,6 +2111,142 @@ function renderProjects(projects) {
     </div>`;
   }).join('');
 }
+
+// ── RANKING / PRAISE SYSTEM ───────────────────────────────────
+const MEDAL = ['🥇','🥈','🥉'];
+const RANK_COLORS = [
+  'border-yellow-500/40 bg-yellow-500/5',
+  'border-gray-400/40 bg-gray-400/5',
+  'border-amber-700/40 bg-amber-700/5',
+];
+
+window.loadRanking = async function() {
+  const rankEl = document.getElementById('ranking-list');
+  const doneEl = document.getElementById('done-tasks-list');
+  rankEl.innerHTML = '<div class="text-gray-600 text-sm">Loading...</div>';
+  doneEl.innerHTML = '<div class="text-gray-600 text-sm">Loading...</div>';
+
+  try {
+    // Load scores
+    const scoresSnap = await getDocs(collection(db, 'team-scores'));
+    const scores = [];
+    scoresSnap.forEach(d => scores.push({ id: d.id, ...d.data() }));
+    scores.sort((a, b) => (b.total_score||0) - (a.total_score||0));
+
+    rankEl.innerHTML = scores.length === 0
+      ? '<div class="text-gray-600 text-sm">ยังไม่มีข้อมูล — ส่งงานก่อนนะ</div>'
+      : scores.map((s, i) => {
+          const medal = MEDAL[i] || `#${i+1}`;
+          const border = RANK_COLORS[i] || 'border-gray-800/60 bg-gray-900/40';
+          const bar = Math.min(100, Math.round(((s.total_score||0) / ((scores[0].total_score||1))) * 100));
+          return `<div class="border ${border} rounded-2xl p-4 flex items-center gap-4">
+            <div class="text-2xl w-8 text-center">${medal}</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2 mb-1.5">
+                <span class="font-bold text-white">${escHtml(s.member||s.id)}</span>
+                <span class="text-indigo-400 font-bold text-sm">${s.total_score||0} pts</span>
+              </div>
+              <div class="w-full bg-gray-800 rounded-full h-1.5 mb-1.5">
+                <div class="bg-indigo-500 h-1.5 rounded-full" style="width:${bar}%"></div>
+              </div>
+              <div class="flex gap-3 text-xs text-gray-500">
+                <span>✅ ${s.tasks_done||0} งาน</span>
+                <span>⭐ ${s.praise_points||0} คะแนนชม</span>
+              </div>
+            </div>
+          </div>`;
+        }).join('');
+
+    // Load recent DONE tasks
+    const wfSnap = await getDocs(query(
+      collection(db, 'team-workflow'),
+      orderBy('timestamp', 'desc'),
+      limit(15)
+    ));
+    const doneTasks = [];
+    wfSnap.forEach(d => {
+      const t = d.data();
+      if (t.status === 'DONE') doneTasks.push({ id: d.id, ...t });
+    });
+
+    doneEl.innerHTML = doneTasks.length === 0
+      ? '<div class="text-gray-600 text-sm">ยังไม่มีงานเสร็จ</div>'
+      : doneTasks.map(t => `
+          <div class="bg-gray-900/60 border border-gray-800/60 rounded-xl px-4 py-3 flex items-center gap-3">
+            <div class="flex-1 min-w-0">
+              <div class="text-sm text-white font-medium truncate">${escHtml(t.task||'')}</div>
+              <div class="text-xs text-gray-500 mt-0.5">
+                <span class="text-indigo-400 font-medium">${escHtml(t.member||'')}</span>
+                ${t.duration ? ` · ${escHtml(t.duration)}` : ''}
+                ${t.session ? ` · ${escHtml(t.session)}` : ''}
+              </div>
+            </div>
+            <button onclick="praiseTask('${t.id}','${escHtml(t.member||'')}','${escHtml((t.task||'').replace(/'/g,''))}',this)"
+              class="shrink-0 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/30 text-indigo-400 text-xs font-medium px-3 py-1.5 rounded-xl transition whitespace-nowrap">
+              ⭐ ชม
+            </button>
+          </div>`).join('');
+
+  } catch(e) {
+    console.error(e);
+    rankEl.innerHTML = '<div class="text-red-500 text-sm">Error: ' + e.message + '</div>';
+  }
+};
+
+async function updateMemberScore(member, praisePoints = 0, tasksDone = 0) {
+  const ref = doc(db, 'team-scores', member);
+  const snap = await getDocs(query(collection(db, 'team-scores')));
+  let existing = null;
+  snap.forEach(d => { if(d.id === member) existing = d.data(); });
+
+  const updated = {
+    member,
+    tasks_done: (existing?.tasks_done||0) + tasksDone,
+    praise_points: (existing?.praise_points||0) + praisePoints,
+    updatedAt: serverTimestamp(),
+  };
+  updated.total_score = updated.tasks_done * 10 + updated.praise_points * 5;
+  await setDoc(ref, updated, { merge: true });
+}
+
+window.praiseMe = async function() {
+  const member = document.getElementById('praise-member').value;
+  const reason = document.getElementById('praise-reason').value.trim();
+  if (!member) return alert('เลือกสมาชิกก่อน');
+  await updateMemberScore(member, 1, 0);
+  await addDoc(collection(db, 'team-praise'), {
+    member, reason: reason || 'งานดี', givenBy: 'Champ',
+    createdAt: serverTimestamp(),
+  });
+  document.getElementById('praise-member').value = '';
+  document.getElementById('praise-reason').value = '';
+  alert(`⭐ ชม ${member} แล้ว!`);
+  loadRanking();
+};
+
+window.praiseTask = async function(taskId, member, task, btn) {
+  if (!member) return;
+  btn.disabled = true;
+  btn.textContent = '✅ ชมแล้ว';
+  btn.classList.replace('bg-indigo-600/20','bg-emerald-600/20');
+  await updateMemberScore(member, 1, 0);
+  await addDoc(collection(db, 'team-praise'), {
+    member, reason: `งานดี: ${task}`, taskId, givenBy: 'Champ',
+    createdAt: serverTimestamp(),
+  });
+};
+
+// Auto-update scores when tasks marked DONE from workflow
+window.markTaskDoneWithScore = async function(taskId, member) {
+  await updateMemberScore(member, 0, 1);
+};
+
+// Load ranking when tab opens
+const origSwitch = window.switchTab;
+window.switchTab = function(tab) {
+  origSwitch(tab);
+  if (tab === 'ranking') loadRanking();
+};
 </script>
 </body>
 </html>
