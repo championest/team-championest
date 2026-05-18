@@ -2489,6 +2489,14 @@ const PIPELINE_DETAIL = {
     output: 'Educational content problems/examples → Book for layout design',
     example: '"Unit 3: 15q — 5 conceptual, 7 procedural, 3 challenge. AP Physics 1 aligned. Kinematics → Newton\'s Laws."'
   },
+  nong: {
+    icon: '🎒', name: 'Nong', role: 'Student QA Reviewer',
+    accent: '#14b8a6',
+    desc: 'Reviews educational problems from a student perspective before they enter the question bank. Checks clarity, difficulty calibration (SL vs HL), distractor plausibility, and explanation quality. Mandatory gate between Pi and question_bank.',
+    trigger: 'Pi generates new questions — runs BEFORE Jade fact-check',
+    output: '[PASS] / [REVISE] / [HL-ONLY] verdict per question → revised batch to Jade',
+    example: '"Q42: [PASS] SL ✓ · Q67: [REVISE] ambiguous stem · Q83: [HL-ONLY] too advanced for SL pool"'
+  },
   book: {
     icon: '🎓', name: 'Book', role: 'Instructional Designer',
     accent: '#10b981',
