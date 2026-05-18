@@ -665,13 +665,13 @@
         <div>
           <div class="pipeline-label text-violet-400">Visual Pipeline</div>
           <div class="flex items-center gap-2 pipeline-scroll overflow-x-auto pb-1">
-            <div class="flow-node" data-color="pink"><span class="text-base">🎨</span><span class="text-[10px] text-pink-300 font-semibold">Arty</span><span class="text-[9px] text-gray-500">Spec</span></div>
+            <div class="flow-node" data-color="pink" onclick="showNodeDetail('arty')"><span class="text-base">🎨</span><span class="text-[10px] text-pink-300 font-semibold">Arty</span><span class="text-[9px] text-gray-500">Spec</span></div>
             <div class="flow-arrow">›</div>
-            <div class="flow-node" data-color="amber"><span class="text-base">✨</span><span class="text-[10px] text-amber-300 font-semibold">GenAI</span><span class="text-[9px] text-gray-500">Nano / Higgsfield</span></div>
+            <div class="flow-node" data-color="amber" onclick="showNodeDetail('genai')"><span class="text-base">✨</span><span class="text-[10px] text-amber-300 font-semibold">GenAI</span><span class="text-[9px] text-gray-500">Nano / Higgsfield</span></div>
             <div class="flow-arrow">›</div>
-            <div class="flow-node flow-gate" data-color="violet"><span class="text-base">🎬</span><span class="text-[10px] text-violet-300 font-semibold">Lens</span><span class="text-[9px] text-violet-400/80">Visual Gate</span></div>
+            <div class="flow-node flow-gate" data-color="violet" onclick="showNodeDetail('lens')"><span class="text-base">🎬</span><span class="text-[10px] text-violet-300 font-semibold">Lens</span><span class="text-[9px] text-violet-400/80">Visual Gate</span></div>
             <div class="flow-arrow">›</div>
-            <div class="flow-node" data-color="emerald"><span class="text-base">✅</span><span class="text-[10px] text-emerald-300 font-semibold">Ship</span></div>
+            <div class="flow-node" data-color="emerald" onclick="showNodeDetail('ship')"><span class="text-base">✅</span><span class="text-[10px] text-emerald-300 font-semibold">Ship</span></div>
           </div>
         </div>
 
