@@ -2381,6 +2381,232 @@ window.switchTab = function(tab) {
   origSwitch(tab);
   if (tab === 'ranking') loadRanking();
 };
+
+/* ── Pipeline Node Detail ───────────────────── */
+const PIPELINE_DETAIL = {
+  champ: {
+    icon: '👤', name: 'Champ', role: 'Owner / Director',
+    accent: '#9ca3af',
+    desc: 'Kicks off all work. Describes what needs to happen in any format — idea, problem, screenshot, voice note. No technical knowledge required.',
+    trigger: 'Has an idea, problem, or feedback',
+    output: 'Brief (in any form) → Ace',
+    example: '"อยากได้หน้า leaderboard ใหม่ที่ดูดีขึ้น"'
+  },
+  ace: {
+    icon: '⭐', name: 'Ace', role: 'Chief of Staff',
+    accent: '#38bdf8',
+    desc: 'Listens to Champ, diagnoses the real problem, picks the right team members, and delegates with full context. Asks one sharp question max before acting.',
+    trigger: 'Any message from Champ',
+    output: 'Task dispatch to Scout + Arty (parallel) or correct member',
+    example: '"ชัดแล้ว — Scout + Arty parallel, Cody wait for both. Visual: Nano Banana → Lens."'
+  },
+  scout: {
+    icon: '🔍', name: 'Scout', role: 'Research',
+    accent: '#10b981',
+    desc: 'Researches libraries, existing patterns, competitors, API docs — anything Cody needs to build well. Delivers numbered findings with a clear recommendation.',
+    trigger: 'Ace dispatch on dev/UI tasks (runs parallel with Arty)',
+    output: 'Research findings → Cody briefing',
+    example: '"3 approaches: 1. Firestore listener (real-time, recommended) 2. REST poll 3. WebSocket → Recommend: Firestore"'
+  },
+  arty: {
+    icon: '🎨', name: 'Arty', role: 'Design',
+    accent: '#ec4899',
+    desc: 'Writes complete Tailwind-ready design specs before Cody writes a single line. Always searches 21st.dev/shadcn for matching components first, then adapts. No spec = Cody does not build.',
+    trigger: 'Ace dispatch on dev/UI tasks (runs parallel with Scout)',
+    output: 'Design spec with Tailwind classes → Cody',
+    example: '"Found: 21st.dev card-hover → adapted dark. Card: bg-gray-800 rounded-xl p-4. CTA: indigo-600 full-width."'
+  },
+  cody: {
+    icon: '💻', name: 'Cody', role: 'Dev',
+    accent: '#6366f1',
+    desc: 'Builds features, fixes bugs, refactors, deploys. Waits for BOTH Scout research and Arty spec before starting. Outputs results only — no explanations.',
+    trigger: 'Scout research + Arty spec both ready',
+    output: 'Working code → Spoty for QA',
+    example: '"Done. app/page.tsx:42 — auth guard added. Deployed to Vercel."'
+  },
+  spoty: {
+    icon: '🛡️', name: 'Spoty', role: 'QA Gate — mandatory',
+    accent: '#f43f5e',
+    desc: 'Reviews all code before deploy. Severity-ordered: Critical → Warning → Minor. Nothing ships without sign-off. No exceptions, no bypasses.',
+    trigger: 'Cody finishes build',
+    output: 'APPROVED → Deploy  OR  BLOCKED → back to Cody with issue list',
+    example: '"[Critical] auth token exposed in localStorage. [Warning] missing error boundary. → BLOCKED"'
+  },
+  deploy: {
+    icon: '🚀', name: 'Deploy', role: 'Production',
+    accent: '#22c55e',
+    desc: 'Code goes live to production. Netlify for static sites, Vercel for Next.js apps, Railway for bots and APIs. Spike logs the event automatically.',
+    trigger: 'Spoty approval',
+    output: 'Live on production → Spike logs it',
+    example: '"Deployed to Vercel — commit b2422a2. up-level-guild.vercel.app live."'
+  },
+  genai: {
+    icon: '✨', name: 'GenAI', role: 'Nano Banana / Higgsfield',
+    accent: '#f59e0b',
+    desc: 'Generates visual assets from Arty\'s brief. Nano Banana Pro (Gemini) for images — hero images, thumbnails, illustrations. Higgsfield for video generation.',
+    trigger: 'Arty visual spec is ready',
+    output: 'Generated image/video → Lens for review',
+    example: '"/nano-banana-pro — hero image 1024×1024 generated from spec"'
+  },
+  lens: {
+    icon: '🎬', name: 'Lens', role: 'Visual Gate — mandatory',
+    accent: '#8b5cf6',
+    desc: 'Reviews every generated visual for: brief alignment, composition, color harmony, brand fit, and AI artifacts (distorted faces, extra limbs, garbled text). Zero tolerance — either APPROVED or full revision prompt covering ALL issues at once. Max 3 rounds.',
+    trigger: 'GenAI output is ready',
+    output: 'APPROVED → Ship  OR  complete revision prompt → GenAI (max 3 rounds, then escalate to Ace)',
+    example: '"[Critical] face distorted L side. [Fix] text contrast ratio 1.8 — unreadable. → Revision prompt: \'realistic face, sharp edges, high contrast white text on dark bg...\'"'
+  },
+  ship: {
+    icon: '✅', name: 'Ship', role: 'Visual Published',
+    accent: '#22c55e',
+    desc: 'Approved visual asset reaches its destination. Could be: social media post, website hero, TPT thumbnail, Google Drive backup, or embedded in code.',
+    trigger: 'Lens approval',
+    output: 'Final asset in use at destination',
+    example: '"hero-v3.png → uploaded to Google Drive + src updated in page.tsx"'
+  },
+  amy: {
+    icon: '👥', name: 'Amy', role: 'Customer Insight',
+    accent: '#f43f5e',
+    desc: 'Maps who the buyer is, why they buy, and what they wish existed. Runs BEFORE any content is created — Coco, Pi, and Book all wait for Amy\'s persona output.',
+    trigger: 'Before any content work begins',
+    output: 'Buyer persona + pain points → Coco / Pi / Book as briefing',
+    example: '"Buyer: HS math teacher, US suburban, AP prep. Pain: no worked solutions with steps. WTP: $4–8/set, $20–35/bundle."'
+  },
+  coco: {
+    icon: '✍️', name: 'Coco', role: 'Content',
+    accent: '#a78bfa',
+    desc: 'Writes social media posts, video scripts, voiceovers, and marketing copy. Always works from Amy\'s persona. Offers 2–3 options when angle is unclear.',
+    trigger: 'Amy persona ready',
+    output: 'Copy / script ready for publishing or design',
+    example: '"3 options: [A] hook-first — shock stat opener [B] story — teacher struggle arc [C] problem-led — pain point direct"'
+  },
+  pi: {
+    icon: '📐', name: 'Pi', role: 'Math & Physics Expert',
+    accent: '#38bdf8',
+    desc: 'Creates problem sets, worked examples, formula sheets aligned to AP, IB, O-Level, and A-Level curricula. Ensures accuracy, proper notation, and difficulty progression.',
+    trigger: 'Amy persona ready (knows who the student is)',
+    output: 'Educational content problems/examples → Book for layout design',
+    example: '"Unit 3: 15q — 5 conceptual, 7 procedural, 3 challenge. AP Physics 1 aligned. Kinematics → Newton\'s Laws."'
+  },
+  book: {
+    icon: '🎓', name: 'Book', role: 'Instructional Designer',
+    accent: '#10b981',
+    desc: 'Designs resource layout, visual hierarchy, typography, and TPT-optimized thumbnails. Makes educational content easy to use AND sellable. Works from Pi\'s content + Amy\'s buyer profile.',
+    trigger: 'Pi content ready + Amy persona available',
+    output: 'Designed resource spec ready to build in Canva/Google Slides',
+    example: '"Cover: bold title top-left, subject icon right, #1E3A5F bg. 2-col problem layout. Nunito 12pt body. Thumbnail: 1:1 bright contrast."'
+  },
+  content: {
+    icon: '📦', name: 'Content Published', role: 'Output',
+    accent: '#22c55e',
+    desc: 'Final educational or marketing content is ready. Could be a TPT product listing, social post scheduled, script recorded, or resource uploaded.',
+    trigger: 'Coco / Pi / Book complete their output',
+    output: 'Content live or queued for publishing',
+    example: '"AP Physics Problem Set Vol.1 — uploaded to TPT, thumbnail designed, description written."'
+  },
+  spike: {
+    icon: '📊', name: 'Spike', role: 'Workflow Monitor',
+    accent: '#6366f1',
+    desc: 'Logs every team action to Firestore team-workflow in real time (visible on this dashboard). Writes full session summary at close. Detects slow/stuck tasks and escalates.',
+    trigger: 'Every task start, completion, and handoff + session end',
+    output: 'Firestore logs → live feed here + session summary in workflow.md',
+    example: '"[11:42] Cody → auth guard → DONE (3min) | [11:45] Scout → TPT research → SLOW >10min → investigating"'
+  },
+  memo: {
+    icon: '🧠', name: 'Memo', role: 'Brain',
+    accent: '#f59e0b',
+    desc: 'Updates the Second Brain Obsidian vault at session end. Saves decisions, research findings, and session summaries. Ensures next session starts with full context.',
+    trigger: 'Spike session log complete',
+    output: 'Vault updated — Projects/, Decisions/Index.md, Research/ in iCloud',
+    example: '"Updated: Projects/Up Level Guild.md · Decisions/Index.md · Research/TPT-pricing.md"'
+  }
+};
+
+const colorAccentMap = {
+  '#38bdf8': 'rgba(56,189,248,0.15)',  '#6366f1': 'rgba(99,102,241,0.15)',
+  '#8b5cf6': 'rgba(139,92,246,0.15)',  '#10b981': 'rgba(16,185,129,0.15)',
+  '#f43f5e': 'rgba(244,63,94,0.15)',   '#f59e0b': 'rgba(245,158,11,0.15)',
+  '#ec4899': 'rgba(236,72,153,0.15)',  '#9ca3af': 'rgba(156,163,175,0.15)',
+  '#a78bfa': 'rgba(167,139,250,0.15)', '#22c55e': 'rgba(34,197,94,0.15)',
+};
+
+function showNodeDetail(id) {
+  const d = PIPELINE_DETAIL[id];
+  if (!d) return;
+  const modal = document.getElementById('node-detail-modal');
+  const sheet = document.getElementById('node-detail-sheet');
+  const bg = colorAccentMap[d.accent] || 'rgba(99,102,241,0.15)';
+  document.getElementById('nd-icon').textContent = d.icon;
+  document.getElementById('nd-avatar').style.background = bg;
+  document.getElementById('nd-avatar').style.borderColor = d.accent + '55';
+  document.getElementById('nd-name').textContent = d.name;
+  document.getElementById('nd-role').textContent = d.role;
+  document.getElementById('nd-desc').textContent = d.desc;
+  document.getElementById('nd-trigger').textContent = d.trigger;
+  document.getElementById('nd-output').textContent = d.output;
+  document.getElementById('nd-example').textContent = d.example;
+  document.getElementById('nd-accent-bar').style.background = d.accent;
+  modal.classList.remove('hidden');
+  requestAnimationFrame(() => sheet.style.transform = 'translateY(0)');
+}
+
+function closeNodeDetail(e) {
+  if (e && e.target.id !== 'node-detail-modal') return;
+  const sheet = document.getElementById('node-detail-sheet');
+  sheet.style.transform = 'translateY(100%)';
+  setTimeout(() => document.getElementById('node-detail-modal').classList.add('hidden'), 280);
+}
+function closeNodeDetailBtn() {
+  const sheet = document.getElementById('node-detail-sheet');
+  sheet.style.transform = 'translateY(100%)';
+  setTimeout(() => document.getElementById('node-detail-modal').classList.add('hidden'), 280);
+}
 </script>
+
+<!-- Node Detail Bottom Sheet -->
+<div id="node-detail-modal" class="hidden fixed inset-0 z-50 flex items-end justify-center" onclick="closeNodeDetail(event)">
+  <div class="absolute inset-0 bg-black/60" style="backdrop-filter:blur(4px)"></div>
+  <div id="node-detail-sheet" class="relative w-full max-w-lg mx-3 mb-24 rounded-2xl overflow-hidden"
+       style="background:rgba(15,18,26,0.97);border:1px solid rgba(55,65,81,0.6);transform:translateY(100%);transition:transform 0.28s cubic-bezier(0.32,0.72,0,1)">
+    <!-- accent top bar -->
+    <div id="nd-accent-bar" style="height:3px;width:100%"></div>
+    <!-- header -->
+    <div class="flex items-start justify-between px-5 pt-4 pb-3">
+      <div class="flex items-center gap-3">
+        <div id="nd-avatar" class="w-11 h-11 rounded-xl flex items-center justify-center text-2xl flex-shrink-0" style="border:1px solid rgba(99,102,241,0.3)">
+          <span id="nd-icon"></span>
+        </div>
+        <div>
+          <div id="nd-name" class="font-bold text-white text-sm leading-tight"></div>
+          <div id="nd-role" class="text-xs text-gray-400 mt-0.5"></div>
+        </div>
+      </div>
+      <button onclick="closeNodeDetailBtn()" class="w-7 h-7 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-white transition flex-shrink-0 mt-0.5">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <!-- body -->
+    <div class="px-5 pb-5 space-y-2.5">
+      <div class="rounded-xl p-3" style="background:rgba(255,255,255,0.04);border:1px solid rgba(55,65,81,0.4)">
+        <div class="text-[9px] text-gray-500 uppercase tracking-widest mb-1.5 font-semibold">What they do</div>
+        <div id="nd-desc" class="text-sm text-gray-200 leading-relaxed"></div>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div class="rounded-xl p-3" style="background:rgba(255,255,255,0.04);border:1px solid rgba(55,65,81,0.4)">
+          <div class="text-[9px] text-gray-500 uppercase tracking-widest mb-1.5 font-semibold">Triggered by</div>
+          <div id="nd-trigger" class="text-xs text-gray-300 leading-relaxed"></div>
+        </div>
+        <div class="rounded-xl p-3" style="background:rgba(255,255,255,0.04);border:1px solid rgba(55,65,81,0.4)">
+          <div class="text-[9px] text-gray-500 uppercase tracking-widest mb-1.5 font-semibold">Output</div>
+          <div id="nd-output" class="text-xs text-gray-300 leading-relaxed"></div>
+        </div>
+      </div>
+      <div class="rounded-xl p-3" style="background:rgba(255,255,255,0.04);border-left:2px solid;border-color:rgba(99,102,241,0.5) transparent transparent transparent;border-style:solid;border-width:0 0 0 2px;border-color:rgba(99,102,241,0.5);background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.15);border-left:2px solid rgba(99,102,241,0.6)">
+        <div class="text-[9px] text-gray-500 uppercase tracking-widest mb-1.5 font-semibold">Example</div>
+        <div id="nd-example" class="text-xs text-indigo-200/80 leading-relaxed italic font-mono"></div>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
