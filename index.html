@@ -679,15 +679,15 @@
         <div>
           <div class="pipeline-label text-amber-400">Content Pipeline</div>
           <div class="flex items-center gap-2 pipeline-scroll overflow-x-auto pb-1">
-            <div class="flow-node" data-color="rose"><span class="text-base">👥</span><span class="text-[10px] text-rose-300 font-semibold">Amy</span><span class="text-[9px] text-gray-500">Insight first</span></div>
+            <div class="flow-node" data-color="rose" onclick="showNodeDetail('amy')"><span class="text-base">👥</span><span class="text-[10px] text-rose-300 font-semibold">Amy</span><span class="text-[9px] text-gray-500">Insight first</span></div>
             <div class="flow-arrow">›</div>
             <div class="flex flex-col gap-1.5 flex-shrink-0">
-              <div class="flow-node" data-color="violet"><div class="flex items-center gap-1"><span class="text-xs">✍️</span><span class="text-[10px] text-violet-300 font-semibold">Coco</span></div></div>
-              <div class="flow-node" data-color="sky"><div class="flex items-center gap-1"><span class="text-xs">📐</span><span class="text-[10px] text-sky-300 font-semibold">Pi</span></div></div>
-              <div class="flow-node" data-color="emerald"><div class="flex items-center gap-1"><span class="text-xs">🎓</span><span class="text-[10px] text-emerald-300 font-semibold">Book</span></div></div>
+              <div class="flow-node" data-color="violet" onclick="showNodeDetail('coco')"><div class="flex items-center gap-1"><span class="text-xs">✍️</span><span class="text-[10px] text-violet-300 font-semibold">Coco</span></div></div>
+              <div class="flow-node" data-color="sky" onclick="showNodeDetail('pi')"><div class="flex items-center gap-1"><span class="text-xs">📐</span><span class="text-[10px] text-sky-300 font-semibold">Pi</span></div></div>
+              <div class="flow-node" data-color="emerald" onclick="showNodeDetail('book')"><div class="flex items-center gap-1"><span class="text-xs">🎓</span><span class="text-[10px] text-emerald-300 font-semibold">Book</span></div></div>
             </div>
             <div class="flow-arrow">›</div>
-            <div class="flow-node" data-color="emerald"><span class="text-base">📦</span><span class="text-[10px] text-emerald-300 font-semibold">Content</span></div>
+            <div class="flow-node" data-color="emerald" onclick="showNodeDetail('content')"><span class="text-base">📦</span><span class="text-[10px] text-emerald-300 font-semibold">Content</span></div>
           </div>
         </div>
 
