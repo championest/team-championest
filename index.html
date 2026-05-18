@@ -760,7 +760,7 @@ flowchart TD
           <option value="">เลือกสมาชิก...</option>
           <option>Ace</option><option>Cody</option><option>Coco</option><option>Scout</option>
           <option>Spoty</option><option>Memo</option><option>Arty</option><option>Bolt</option>
-          <option>Amy</option><option>Pi</option><option>Book</option><option>Vera</option><option>Spike</option>
+          <option>Amy</option><option>Pi</option><option>Book</option><option>Vera</option><option>Spike</option><option>Lens</option>
         </select>
         <input id="praise-reason" type="text" placeholder="งานดีตรงไหน..." class="flex-[2] bg-gray-800 border border-gray-700 text-white text-sm rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-500" />
         <button onclick="praiseMe()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-xl transition whitespace-nowrap">👍 ชม</button>
@@ -1182,6 +1182,7 @@ const DEFAULT_MEMBERS = [
   { id: 'sage',  name: 'Book',  role: 'Instructional Design', color: 'emerald', scope: 'Educational layout, TPT thumbnails, teacher UX — after Amy', style: 'Visual + pedagogical. Concrete specs.', example: '"Cover: bold title, #1E3A5F bg. 2-col layout. Nunito 12pt."', order: 10 },
   { id: 'vera',  name: 'Vera',  role: 'Executive Secretary',  color: 'violet',  scope: 'Forms, document reading, deadline tracking, correspondence', style: 'Warm, precise, professional.', example: '"[ต้องทำ]: ต่ออายุ visa ภายใน 14 วัน"', order: 11 },
   { id: 'flux',  name: 'Spike',  role: 'Workflow Monitor',     color: 'indigo',  scope: 'Logs all activity to Firestore team-workflow + local file. Triggers Memo at session end.', style: 'Precise, data-driven. Structured log format.', example: '"[11:42] Cody → auth guard → DONE (3min)"', order: 12 },
+  { id: 'lens',  name: 'Lens',  role: 'Visual Editor',        color: 'violet',  scope: 'Quality gate for all visual output — images, videos, thumbnails. Reviews composition, color, brand fit, AI artifacts. Signs off before any visual ships.', style: 'Exacting creative director. Zero tolerance. One-shot revision prompts. Trend-aware.', example: '"[Critical] face distorted. [Fix] contrast low. → Revision prompt: \'...\'"', order: 13 },
 ];
 
 // ─── Init ────────────────────────────────────────────────
