@@ -632,40 +632,72 @@
           Suggest
         </button>
       </div>
-      <!-- Chart area -->
-      <div class="px-3 pb-4 overflow-x-auto">
-        <div class="rounded-xl bg-gray-950/70 p-3" style="border: 1px solid rgba(55,65,81,0.4)">
-          <div class="mermaid" id="workflow-diagram">
-flowchart TD
-    CHAMP(["👤 Champ"]) --> ACE["⭐ Ace\nDiagnose & Delegate"]
+      <!-- Pipeline Cards -->
+      <div class="px-3 pb-4 space-y-4">
 
-    ACE -->|Dev/UI| SAM["🔍 Scout\nResearch"]
-    ACE -->|Dev/UI| PIXEL["🎨 Arty\nDesign"]
-    ACE -->|Content| RENA["👥 Amy\nCustomer Insight"]
-    ACE -->|Tools| BOLT["🔧 Bolt\nTools & Auto"]
-    ACE -->|Admin| VERA["📋 Vera\nAdmin"]
-
-    SAM -->|"parallel ↘"| KAI["💻 Cody\nBuild"]
-    PIXEL -->|"parallel ↗"| KAI
-
-    RENA --> CONTENT["✍️ Coco / 📐 Pi / 🎓 Book\nContent Team"]
-
-    KAI --> JADE{"🔍 Spoty\nQA Gate"}
-    JADE -->|"✅ Pass"| DEPLOY(["🚀 Deploy"])
-    JADE -->|"❌ Fail"| KAI
-
-    DEPLOY --> FLUX["📊 Spike\nLog Session"]
-    FLUX --> IRIS["🧠 Memo\nUpdate Vault"]
-
-    style CHAMP fill:#374151,stroke:#9ca3af,color:#e5e7eb
-    style ACE fill:#0c4a6e,stroke:#38bdf8,color:#e0f2fe
-    style KAI fill:#1e1b4b,stroke:#6366f1,color:#e0e7ff
-    style JADE fill:#4c0519,stroke:#f43f5e,color:#ffe4e6
-    style DEPLOY fill:#052e16,stroke:#22c55e,color:#dcfce7
-    style FLUX fill:#1c1917,stroke:#a8a29e,color:#e7e5e4
-    style IRIS fill:#451a03,stroke:#f59e0b,color:#fef3c7
+        <!-- Dev & Build Pipeline -->
+        <div>
+          <div class="pipeline-label text-indigo-400">Dev &amp; Build</div>
+          <div class="flex items-center gap-2 pipeline-scroll overflow-x-auto pb-1">
+            <div class="flow-node" data-color="gray"><span class="text-base">👤</span><span class="text-[10px] text-gray-300 font-semibold">Champ</span></div>
+            <div class="flow-arrow">›</div>
+            <div class="flow-node" data-color="sky"><span class="text-base">⭐</span><span class="text-[10px] text-sky-300 font-semibold">Ace</span><span class="text-[9px] text-gray-500">Delegate</span></div>
+            <div class="flow-arrow">›</div>
+            <div class="flex flex-col gap-1.5 flex-shrink-0">
+              <div class="flow-node" data-color="emerald"><div class="flex items-center gap-1"><span class="text-xs">🔍</span><span class="text-[10px] text-emerald-300 font-semibold">Scout</span></div></div>
+              <div class="flow-node" data-color="pink"><div class="flex items-center gap-1"><span class="text-xs">🎨</span><span class="text-[10px] text-pink-300 font-semibold">Arty</span></div></div>
+            </div>
+            <div class="flow-arrow">›</div>
+            <div class="flow-node" data-color="indigo"><span class="text-base">💻</span><span class="text-[10px] text-indigo-300 font-semibold">Cody</span><span class="text-[9px] text-gray-500">Build</span></div>
+            <div class="flow-arrow">›</div>
+            <div class="flow-node flow-gate" data-color="rose"><span class="text-base">🛡️</span><span class="text-[10px] text-rose-300 font-semibold">Spoty</span><span class="text-[9px] text-rose-500/80">QA Gate</span></div>
+            <div class="flow-arrow">›</div>
+            <div class="flow-node" data-color="emerald"><span class="text-base">🚀</span><span class="text-[10px] text-emerald-300 font-semibold">Deploy</span></div>
           </div>
         </div>
+
+        <!-- Visual Pipeline (NEW — Lens) -->
+        <div>
+          <div class="pipeline-label text-violet-400">Visual Pipeline</div>
+          <div class="flex items-center gap-2 pipeline-scroll overflow-x-auto pb-1">
+            <div class="flow-node" data-color="pink"><span class="text-base">🎨</span><span class="text-[10px] text-pink-300 font-semibold">Arty</span><span class="text-[9px] text-gray-500">Spec</span></div>
+            <div class="flow-arrow">›</div>
+            <div class="flow-node" data-color="amber"><span class="text-base">✨</span><span class="text-[10px] text-amber-300 font-semibold">GenAI</span><span class="text-[9px] text-gray-500">Nano / Higgsfield</span></div>
+            <div class="flow-arrow">›</div>
+            <div class="flow-node flow-gate" data-color="violet"><span class="text-base">🎬</span><span class="text-[10px] text-violet-300 font-semibold">Lens</span><span class="text-[9px] text-violet-400/80">Visual Gate</span></div>
+            <div class="flow-arrow">›</div>
+            <div class="flow-node" data-color="emerald"><span class="text-base">✅</span><span class="text-[10px] text-emerald-300 font-semibold">Ship</span></div>
+          </div>
+        </div>
+
+        <!-- Content Pipeline -->
+        <div>
+          <div class="pipeline-label text-amber-400">Content Pipeline</div>
+          <div class="flex items-center gap-2 pipeline-scroll overflow-x-auto pb-1">
+            <div class="flow-node" data-color="rose"><span class="text-base">👥</span><span class="text-[10px] text-rose-300 font-semibold">Amy</span><span class="text-[9px] text-gray-500">Insight first</span></div>
+            <div class="flow-arrow">›</div>
+            <div class="flex flex-col gap-1.5 flex-shrink-0">
+              <div class="flow-node" data-color="violet"><div class="flex items-center gap-1"><span class="text-xs">✍️</span><span class="text-[10px] text-violet-300 font-semibold">Coco</span></div></div>
+              <div class="flow-node" data-color="sky"><div class="flex items-center gap-1"><span class="text-xs">📐</span><span class="text-[10px] text-sky-300 font-semibold">Pi</span></div></div>
+              <div class="flow-node" data-color="emerald"><div class="flex items-center gap-1"><span class="text-xs">🎓</span><span class="text-[10px] text-emerald-300 font-semibold">Book</span></div></div>
+            </div>
+            <div class="flow-arrow">›</div>
+            <div class="flow-node" data-color="emerald"><span class="text-base">📦</span><span class="text-[10px] text-emerald-300 font-semibold">Content</span></div>
+          </div>
+        </div>
+
+        <!-- Session Close -->
+        <div>
+          <div class="pipeline-label text-gray-500">Session Close</div>
+          <div class="flex items-center gap-2 pipeline-scroll overflow-x-auto pb-1">
+            <div class="flow-node" data-color="emerald"><span class="text-base">🚀</span><span class="text-[10px] text-emerald-300 font-semibold">Deploy</span></div>
+            <div class="flow-arrow">›</div>
+            <div class="flow-node" data-color="indigo"><span class="text-base">📊</span><span class="text-[10px] text-indigo-300 font-semibold">Spike</span><span class="text-[9px] text-gray-500">Log</span></div>
+            <div class="flow-arrow">›</div>
+            <div class="flow-node" data-color="amber"><span class="text-base">🧠</span><span class="text-[10px] text-amber-300 font-semibold">Memo</span><span class="text-[9px] text-gray-500">Vault</span></div>
+          </div>
+        </div>
+
       </div>
     </div>
 
