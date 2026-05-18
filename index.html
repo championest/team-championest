@@ -2530,7 +2530,7 @@ const colorAccentMap = {
   '#a78bfa': 'rgba(167,139,250,0.15)', '#22c55e': 'rgba(34,197,94,0.15)',
 };
 
-function showNodeDetail(id) {
+window.showNodeDetail = function(id) {
   const d = PIPELINE_DETAIL[id];
   if (!d) return;
   const modal = document.getElementById('node-detail-modal');
@@ -2548,19 +2548,19 @@ function showNodeDetail(id) {
   document.getElementById('nd-accent-bar').style.background = d.accent;
   modal.classList.remove('hidden');
   requestAnimationFrame(() => sheet.style.transform = 'translateY(0)');
-}
+};
 
-function closeNodeDetail(e) {
+window.closeNodeDetail = function(e) {
   if (e && e.target.id !== 'node-detail-modal') return;
   const sheet = document.getElementById('node-detail-sheet');
   sheet.style.transform = 'translateY(100%)';
   setTimeout(() => document.getElementById('node-detail-modal').classList.add('hidden'), 280);
-}
-function closeNodeDetailBtn() {
+};
+window.closeNodeDetailBtn = function() {
   const sheet = document.getElementById('node-detail-sheet');
   sheet.style.transform = 'translateY(100%)';
   setTimeout(() => document.getElementById('node-detail-modal').classList.add('hidden'), 280);
-}
+};
 </script>
 
 <!-- Node Detail Bottom Sheet -->
