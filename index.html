@@ -418,6 +418,68 @@
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(75,85,99,0.5); border-radius: 4px; }
+
+    /* ── Pipeline flow nodes */
+    .flow-node {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      padding: 8px 10px; border-radius: 10px; border: 1px solid; flex-shrink: 0;
+      min-width: 64px; text-align: center; position: relative;
+      transition: transform 0.2s, box-shadow 0.2s;
+      backdrop-filter: blur(8px);
+    }
+    .flow-node:hover { transform: translateY(-2px); }
+    .flow-node[data-color="sky"]     { background: rgba(12,74,110,0.35);   border-color: rgba(56,189,248,0.25); }
+    .flow-node[data-color="sky"]:hover    { box-shadow: 0 0 16px rgba(56,189,248,0.2); border-color: rgba(56,189,248,0.5); }
+    .flow-node[data-color="indigo"]  { background: rgba(30,27,75,0.4);     border-color: rgba(99,102,241,0.25); }
+    .flow-node[data-color="indigo"]:hover { box-shadow: 0 0 16px rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.5); }
+    .flow-node[data-color="violet"]  { background: rgba(76,29,149,0.35);   border-color: rgba(139,92,246,0.25); }
+    .flow-node[data-color="violet"]:hover { box-shadow: 0 0 16px rgba(139,92,246,0.2); border-color: rgba(139,92,246,0.5); }
+    .flow-node[data-color="emerald"] { background: rgba(5,46,22,0.4);      border-color: rgba(16,185,129,0.25); }
+    .flow-node[data-color="emerald"]:hover{ box-shadow: 0 0 16px rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.5); }
+    .flow-node[data-color="rose"]    { background: rgba(76,5,25,0.4);      border-color: rgba(244,63,94,0.25);  }
+    .flow-node[data-color="rose"]:hover   { box-shadow: 0 0 16px rgba(244,63,94,0.2);  border-color: rgba(244,63,94,0.5); }
+    .flow-node[data-color="amber"]   { background: rgba(69,26,3,0.4);      border-color: rgba(245,158,11,0.25); }
+    .flow-node[data-color="amber"]:hover  { box-shadow: 0 0 16px rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.5); }
+    .flow-node[data-color="pink"]    { background: rgba(80,7,36,0.4);      border-color: rgba(236,72,153,0.25); }
+    .flow-node[data-color="pink"]:hover   { box-shadow: 0 0 16px rgba(236,72,153,0.2); border-color: rgba(236,72,153,0.5); }
+    .flow-node[data-color="gray"]    { background: rgba(17,24,39,0.5);     border-color: rgba(75,85,99,0.4);    }
+    .flow-gate { animation: gate-pulse 3s ease-in-out infinite; }
+    @keyframes gate-pulse {
+      0%,100% { box-shadow: 0 0 6px rgba(244,63,94,0.1); }
+      50% { box-shadow: 0 0 18px rgba(244,63,94,0.35); }
+    }
+    .flow-node[data-color="violet"].flow-gate {
+      animation: gate-pulse-violet 3s ease-in-out infinite;
+    }
+    @keyframes gate-pulse-violet {
+      0%,100% { box-shadow: 0 0 6px rgba(139,92,246,0.15); }
+      50% { box-shadow: 0 0 20px rgba(139,92,246,0.4); }
+    }
+    .flow-arrow {
+      color: #374151; font-size: 18px; align-self: center;
+      flex-shrink: 0; user-select: none; line-height: 1;
+    }
+    .pipeline-scroll { scrollbar-width: none; }
+    .pipeline-scroll::-webkit-scrollbar { display: none; }
+    .pipeline-label {
+      font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; margin-bottom: 8px; padding-left: 4px; opacity: 0.55;
+    }
+    /* ── Active Rules glow cards */
+    .rule-card {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 12px; border-radius: 12px;
+      border: 1px solid rgba(55,65,81,0.5);
+      background: rgba(17,24,39,0.6);
+      backdrop-filter: blur(8px);
+      position: relative; overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .rule-card:hover { box-shadow: 0 0 20px var(--rule-glow,rgba(99,102,241,0.15)); border-color: var(--rule-border,rgba(99,102,241,0.4)); }
+    .rule-card::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; background: var(--rule-accent, #6366f1); border-radius: 3px 0 0 3px;
+    }
   </style>
 </head>
 <body class="bg-gray-950 text-gray-100 min-h-screen">
