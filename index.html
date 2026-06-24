@@ -883,6 +883,32 @@
     </div>
   </div>
 
+  <!-- ── OPS TAB (Mac mini status · task pipeline · token cost) ─── -->
+  <div id="tab-ops" class="hidden space-y-4">
+    <div class="flex items-center justify-between mb-1">
+      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">🖥️ Ops Hub</h2>
+      <span id="ops-updated" class="text-[10px] text-gray-600">—</span>
+    </div>
+
+    <!-- Machine health -->
+    <div id="ops-machine" class="bg-gray-900/60 border border-gray-800/60 rounded-2xl p-4">
+      <div class="text-gray-600 text-sm">Loading machine status…</div>
+    </div>
+
+    <!-- Token / cost -->
+    <div id="ops-tokens" class="bg-gray-900/60 border border-gray-800/60 rounded-2xl p-4">
+      <div class="text-gray-600 text-sm">Loading token usage…</div>
+    </div>
+
+    <!-- Task pipeline -->
+    <div>
+      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">📋 Task Queue (claude-tasks)</div>
+      <div id="ops-tasks" class="space-y-2">
+        <div class="text-gray-600 text-sm">Loading tasks…</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <div class="text-center text-gray-700 text-xs pb-4">
     Team Championest · Claude Code Dashboard
