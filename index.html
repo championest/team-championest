@@ -1321,7 +1321,8 @@ const DEFAULT_MEMBERS = [
 
 // ─── Init ────────────────────────────────────────────────
 async function init() {
-  await seedIfEmpty();
+  loadOps();   // public collections — must run before any auth-gated call that may throw
+  try { await seedIfEmpty(); } catch (e) { console.warn('seedIfEmpty skipped:', e?.code || e); }
   loadTeam();
   loadNotes();
   loadActivityFeed();
@@ -1329,7 +1330,6 @@ async function init() {
   loadSkillUsage();
   loadStatsBar();
   loadSuggestions();
-  loadOps();
 }
 
 // ─── Ops Hub: machine status · token cost · task queue ───────
