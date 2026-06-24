@@ -890,6 +890,83 @@
       <span id="ops-updated" class="text-[10px] text-gray-600">—</span>
     </div>
 
+    <!-- ── Web Dispatch ───────────────────────────────────── -->
+    <div class="bg-gray-900/70 border border-indigo-800/40 rounded-2xl overflow-hidden" style="box-shadow:0 0 30px rgba(99,102,241,0.07)">
+      <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.5),rgba(139,92,246,0.5),transparent)"></div>
+      <div class="p-4 space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="w-6 h-6 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center flex-shrink-0">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </div>
+            <div class="min-w-0">
+              <h3 class="text-sm font-semibold text-white">Web Dispatch</h3>
+              <p class="text-[11px] text-gray-500 truncate">สั่งงาน Claude จากเว็บ → executor บน Mac mini รันให้</p>
+            </div>
+          </div>
+          <!-- Auth bar -->
+          <div id="dispatch-auth" class="flex items-center gap-2 flex-shrink-0">
+            <button id="dispatch-signin" onclick="dispatchSignIn()"
+              class="hidden items-center gap-1.5 bg-white/95 hover:bg-white text-gray-800 text-xs font-medium px-3 py-1.5 rounded-lg transition">
+              <svg width="13" height="13" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"/></svg>
+              Sign in
+            </button>
+            <div id="dispatch-userbox" class="hidden items-center gap-2">
+              <span id="dispatch-user" class="text-[11px] text-gray-400 max-w-[140px] truncate"></span>
+              <button onclick="dispatchSignOut()" class="text-[11px] text-gray-500 hover:text-gray-300 underline transition">ออก</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Compose box — admin only -->
+        <div id="dispatch-compose" class="hidden space-y-2">
+          <textarea id="dispatch-task" rows="3"
+            class="w-full bg-gray-950/70 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500 resize-none"
+            placeholder="พิมพ์คำสั่ง… เช่น 'เพิ่มปุ่ม dark mode ใน members tab' หรือ 'fix bug ตอนกด save แล้วหน้าเด้ง'"></textarea>
+          <div class="flex items-center gap-2">
+            <select id="dispatch-project"
+              class="bg-gray-950/70 border border-gray-700 text-gray-300 text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500">
+              <option value="">— เลือก project —</option>
+              <option value="dashboard">team-dashboard</option>
+              <option value="guild">guild (members-web)</option>
+              <option value="kids">UpLevelKids</option>
+              <option value="marketplace">marketplace</option>
+              <option value="leaderboard">leaderboard</option>
+              <option value="lorcana-weekly">lorcana-weekly</option>
+              <option value="pkm-court">pkm-court</option>
+              <option value="pkm-deck">pkm-deck</option>
+              <option value="vera">vera-telegram</option>
+              <option value="poster">poster</option>
+              <option value="tpt">tpt-marketing</option>
+              <option value="hq">champ-hq</option>
+              <option value="general">general / อื่นๆ</option>
+            </select>
+            <button id="dispatch-send" onclick="dispatchTask()"
+              class="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition flex items-center justify-center gap-2">
+              <span>ส่งคำสั่ง</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Non-admin hint -->
+        <div id="dispatch-locked" class="hidden text-[11px] text-gray-500 bg-gray-950/50 border border-gray-800 rounded-xl px-3 py-2">
+          🔒 ดู feed ได้ แต่สั่งงานต้อง <span class="text-gray-300">Sign in ด้วยอีเมล admin</span> เท่านั้น
+        </div>
+
+        <!-- Live feed -->
+        <div class="pt-1">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Live Feed</span>
+            <span id="dispatch-feed-status" class="flex items-center gap-1.5 text-[10px] text-gray-600"><span class="w-1.5 h-1.5 rounded-full bg-gray-600"></span>connecting…</span>
+          </div>
+          <div id="dispatch-feed" class="space-y-2 max-h-[460px] overflow-y-auto pr-1">
+            <div class="text-gray-600 text-sm">Loading…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Machine health -->
     <div id="ops-machine" class="bg-gray-900/60 border border-gray-800/60 rounded-2xl p-4">
       <div class="text-gray-600 text-sm">Loading machine status…</div>
@@ -898,14 +975,6 @@
     <!-- Token / cost -->
     <div id="ops-tokens" class="bg-gray-900/60 border border-gray-800/60 rounded-2xl p-4">
       <div class="text-gray-600 text-sm">Loading token usage…</div>
-    </div>
-
-    <!-- Task pipeline -->
-    <div>
-      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">📋 Task Queue (claude-tasks)</div>
-      <div id="ops-tasks" class="space-y-2">
-        <div class="text-gray-600 text-sm">Loading tasks…</div>
-      </div>
     </div>
   </div>
 
@@ -1200,13 +1269,14 @@
       mermaid.run({ nodes: [document.getElementById('workflow-diagram')] });
       mermaidRendered = true;
     }
-    if (tab === 'skills') { skillsRendered = false; renderSkills(); }
+    if (tab === 'skills' && !skillsRendered) renderSkills();   // render once, not on every open
   }
 </script>
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc, addDoc, query, orderBy, limit, onSnapshot, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAKxWv3FI7HrdrRlnJhsQbJ-97Pb_sdiOQ",
@@ -1219,6 +1289,23 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
+
+// ─── Admin allowlist ────────────────────────────────────
+// Mirror of up-level-guild-web/src/lib/admins.ts (ADMIN_EMAILS).
+// Keep in sync manually — firestore.rules isAdmin() must match this list.
+// NOTE: uplevel.ad@gmail.com (shared store mailbox) is intentionally NOT an
+// admin — it's a shared login, kept out of dispatch for a clean audit trail.
+const ADMIN_EMAILS = [
+  'champ.championest@gmail.com',
+  'chawanut.cha@gmail.com',
+  'boomboom08755@gmail.com',
+  'nuslove2560@gmail.com',
+  'phooreephat.k@gmail.com',
+  'namenrw@gmail.com',
+];
+const isAdminEmail = (email) => !!email && ADMIN_EMAILS.includes(email);
+let currentUser = null;   // set by onAuthStateChanged
 
 // ─── PIN ────────────────────────────────────────────────
 const CORRECT_PIN = "7777";
@@ -1321,19 +1408,23 @@ const DEFAULT_MEMBERS = [
 
 // ─── Init ────────────────────────────────────────────────
 async function init() {
-  loadOps();   // public collections — must run before any auth-gated call that may throw
+  initAuth();   // resolve admin sign-in state early (cheap — just an auth listener)
   try { await seedIfEmpty(); } catch (e) { console.warn('seedIfEmpty skipped:', e?.code || e); }
+  // Critical for the default Team view:
   loadTeam();
-  loadNotes();
-  loadActivityFeed();
-  loadProjects();
-  loadSkillUsage();
   loadStatsBar();
-  loadSuggestions();
+  loadActivityFeed();
+  // Off-screen tabs → defer to idle time: faster first paint, fewer simultaneous
+  // listener attaches / less layout work on load. Ops feeds load lazily on tab open.
+  const idle = window.requestIdleCallback || (cb => setTimeout(cb, 200));
+  idle(() => { loadNotes(); loadProjects(); loadSkillUsage(); loadSuggestions(); });
 }
 
-// ─── Ops Hub: machine status · token cost · task queue ───────
-function loadOps() {
+// ─── Ops Hub: machine status · token cost · dispatch feed ───────
+let opsLoaded = false;
+window.loadOps = function loadOps() {
+  if (opsLoaded) return;   // lazy: attach listeners only once, on first Ops open
+  opsLoaded = true;
   const fmtNum = n => (n||0).toLocaleString();
   const ago = ts => { if(!ts) return '—'; const d = ts.toDate ? ts.toDate() : new Date(ts); const s = Math.floor((Date.now()-d)/1000); if(s<60) return s+'s ago'; if(s<3600) return Math.floor(s/60)+'m ago'; if(s<86400) return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; };
   const bar = (pct, warn) => { const c = pct>=90?'bg-rose-500':pct>=70?'bg-amber-500':'bg-emerald-500'; return `<div class="h-1.5 rounded-full bg-gray-800 overflow-hidden"><div class="h-full ${c}" style="width:${Math.min(pct,100)}%"></div></div>`; };
@@ -1376,25 +1467,145 @@ function loadOps() {
       <div class="flex items-end justify-between gap-1 pt-2 border-t border-gray-800">${spark}</div>`;
   });
 
-  // Task queue — claude-tasks recent
-  const tq = query(collection(db, 'claude-tasks'), orderBy('created_at', 'desc'), limit(20));
+  // Dispatch live feed — claude-tasks recent (chat-like, real-time)
+  const tq = query(collection(db, 'claude-tasks'), orderBy('created_at', 'desc'), limit(15));
   onSnapshot(tq, snap => {
-    const el = document.getElementById('ops-tasks');
-    if (snap.empty) { el.innerHTML = '<div class="text-gray-600 text-sm">ไม่มีงานในคิว</div>'; return; }
-    const color = s => ({pending:'amber',running:'sky',done:'emerald',failed:'rose'}[s]||'gray');
+    const el = document.getElementById('dispatch-feed');
+    if (!el) return;
+    const statusEl = document.getElementById('dispatch-feed-status');
+    if (statusEl) statusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>live';
+    if (snap.empty) { el.innerHTML = '<div class="text-gray-600 text-sm py-2">ยังไม่มีงาน — พิมพ์คำสั่งด้านบนเพื่อเริ่ม</div>'; return; }
+    // status → {color, label, icon}
+    const meta = {
+      pending: { c:'amber',   label:'pending', icon:'⏳' },
+      running: { c:'sky',     label:'running', icon:'⚙️' },
+      done:    { c:'emerald', label:'done',    icon:'✅' },
+      failed:  { c:'rose',    label:'failed',  icon:'❌' },
+    };
     el.innerHTML = snap.docs.map(d => {
-      const t = d.data(); const c = color(t.status);
-      const meta = [t.project, t.source, t.cost_usd?('$'+t.cost_usd.toFixed(2)):null, t.duration_s?(t.duration_s+'s'):null].filter(Boolean).join(' · ');
-      return `<div class="bg-gray-900/60 border border-gray-800/60 rounded-xl px-3 py-2.5 flex items-start gap-2.5">
-        <span class="mt-0.5 text-[10px] px-1.5 py-0.5 rounded bg-${c}-900/50 text-${c}-300 whitespace-nowrap">${t.status||'?'}</span>
-        <div class="min-w-0 flex-1">
-          <div class="text-sm text-gray-200 truncate">${escHtml(t.task||'')}</div>
-          <div class="text-[10px] text-gray-500 mt-0.5">${escHtml(meta)} ${t.created_at?('· '+ago(t.created_at)):''}</div>
+      const t = d.data();
+      const m = meta[t.status] || { c:'gray', label:(t.status||'?'), icon:'•' };
+      const pulse = t.status === 'running' ? ' animate-pulse' : '';
+      const sub = [t.project && ('📁 '+t.project), t.source, t.created_by, t.created_at?ago(t.created_at):null].filter(Boolean).map(escHtml).join(' · ');
+      const stats = [
+        t.duration_s != null ? `⏱ ${t.duration_s}s` : null,
+        t.cost_usd != null ? `💰 $${Number(t.cost_usd).toFixed(2)}` : null,
+      ].filter(Boolean).join('  ');
+      const result = t.result || t.error || '';
+      const resultBlock = result ? `
+        <details class="mt-2 group">
+          <summary class="text-[11px] text-${m.c}-300/80 cursor-pointer select-none hover:text-${m.c}-200 list-none flex items-center gap-1">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="transition-transform group-open:rotate-90"><polyline points="9 18 15 12 9 6"/></svg>
+            ${t.error ? 'ดู error' : 'ดูผลลัพธ์'}
+          </summary>
+          <pre class="mt-1.5 text-[11px] text-gray-300 bg-gray-950/70 border border-gray-800 rounded-lg p-2.5 whitespace-pre-wrap break-words max-h-60 overflow-y-auto font-mono leading-relaxed">${escHtml(String(result))}</pre>
+        </details>` : '';
+      return `<div class="bg-gray-950/50 border border-${m.c}-900/40 rounded-xl px-3 py-2.5">
+        <div class="flex items-start gap-2.5">
+          <span class="mt-0.5 text-[10px] px-1.5 py-0.5 rounded bg-${m.c}-900/50 text-${m.c}-300 whitespace-nowrap${pulse}">${m.icon} ${m.label}</span>
+          <div class="min-w-0 flex-1">
+            <div class="text-sm text-gray-100 break-words whitespace-pre-wrap">${escHtml(t.task||'(no task text)')}</div>
+            <div class="text-[10px] text-gray-500 mt-1 flex items-center justify-between gap-2 flex-wrap">
+              <span class="truncate">${sub}</span>
+              ${stats ? `<span class="text-gray-400 whitespace-nowrap">${stats}</span>` : ''}
+            </div>
+            ${resultBlock}
+          </div>
         </div>
       </div>`;
     }).join('');
+  }, err => {
+    const statusEl = document.getElementById('dispatch-feed-status');
+    if (statusEl) statusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>error';
+    console.warn('dispatch feed error:', err?.code || err);
   });
 }
+
+// ─── Web Dispatch: Google auth + send command ───────────────
+function applyAuthUI(user) {
+  currentUser = user || null;
+  const admin = isAdminEmail(user?.email);
+  const signinBtn = document.getElementById('dispatch-signin');
+  const userBox   = document.getElementById('dispatch-userbox');
+  const userLabel = document.getElementById('dispatch-user');
+  const compose   = document.getElementById('dispatch-compose');
+  const locked    = document.getElementById('dispatch-locked');
+  if (!signinBtn) return;   // Ops tab not in DOM yet — harmless
+
+  if (user) {
+    signinBtn.classList.add('hidden'); signinBtn.classList.remove('flex');
+    userBox.classList.remove('hidden'); userBox.classList.add('flex');
+    userLabel.textContent = (admin ? '🟢 ' : '⚪ ') + user.email;
+    userLabel.title = admin ? 'admin — สั่งงานได้' : 'ไม่ใช่ admin — ดูได้อย่างเดียว';
+  } else {
+    signinBtn.classList.remove('hidden'); signinBtn.classList.add('flex');
+    userBox.classList.add('hidden'); userBox.classList.remove('flex');
+  }
+  // Compose box only for admins
+  if (admin) {
+    compose.classList.remove('hidden'); locked.classList.add('hidden');
+  } else {
+    compose.classList.add('hidden');
+    locked.classList.remove('hidden');   // show "view-only" hint whether logged out or non-admin
+  }
+}
+
+function initAuth() {
+  onAuthStateChanged(auth, applyAuthUI);
+}
+
+window.dispatchSignIn = async function() {
+  try {
+    await signInWithPopup(auth, new GoogleAuthProvider());
+  } catch (e) {
+    console.warn('sign-in failed:', e?.code || e);
+    if (e?.code === 'auth/unauthorized-domain') {
+      window.showToast?.('โดเมนนี้ยังไม่ได้รับอนุญาต — เพิ่มใน Firebase Auth authorized domains ก่อน', 'warning');
+    } else if (e?.code !== 'auth/popup-closed-by-user' && e?.code !== 'auth/cancelled-popup-request') {
+      window.showToast?.('Sign-in ไม่สำเร็จ: ' + (e?.code || 'error'), 'error');
+    }
+  }
+};
+
+window.dispatchSignOut = async function() {
+  try { await signOut(auth); window.showToast?.('ออกจากระบบแล้ว', 'info'); }
+  catch (e) { console.warn('sign-out failed:', e); }
+};
+
+window.dispatchTask = async function() {
+  if (!isAdminEmail(currentUser?.email)) {
+    window.showToast?.('ต้อง sign in ด้วยอีเมล admin ก่อนสั่งงาน', 'warning');
+    return;
+  }
+  const taskEl = document.getElementById('dispatch-task');
+  const projEl = document.getElementById('dispatch-project');
+  const btn    = document.getElementById('dispatch-send');
+  const task = (taskEl.value || '').trim();
+  const project = projEl.value || '';
+  if (!task) { window.showToast?.('พิมพ์คำสั่งก่อนนะ', 'warning'); taskEl.focus(); return; }
+
+  btn.disabled = true;
+  const original = btn.innerHTML;
+  btn.innerHTML = '<span>กำลังส่ง…</span>';
+  try {
+    await addDoc(collection(db, 'claude-tasks'), {
+      task,
+      project,
+      status: 'pending',
+      source: 'web-dashboard',
+      created_by: currentUser.email,
+      created_at: serverTimestamp(),
+    });
+    taskEl.value = '';
+    window.showToast?.('ส่งคำสั่งแล้ว — executor จะรันให้', 'success');
+  } catch (e) {
+    console.warn('dispatch failed:', e?.code || e);
+    window.showToast?.('ส่งไม่สำเร็จ: ' + (e?.code === 'permission-denied' ? 'rules ยังไม่อนุญาต (ดู RULES.txt)' : (e?.code || 'error')), 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
+};
 
 // ── Toast system ──────────────────────────────────────────
 window.showToast = function(msg, type = 'success') {
@@ -2476,6 +2687,7 @@ const origSwitch = window.switchTab;
 window.switchTab = function(tab) {
   origSwitch(tab);
   if (tab === 'ranking') loadRanking();
+  if (tab === 'ops' && window.loadOps) window.loadOps();   // lazy: attach Ops + dispatch listeners on first open
 };
 
 /* ── Pipeline Node Detail ───────────────────── */
