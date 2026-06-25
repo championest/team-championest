@@ -1574,6 +1574,108 @@ window.loadDispatch = function loadDispatch() {
     if (statusEl) statusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>error';
     console.warn('dispatch feed error:', err?.code || err);
   });
+
+  // ── Auto Agents grid (machine-status services + poster-dojo freshness) ──
+  const AGENT_CATALOG = [
+    { key:'executor', svc:'com.championest.claude-executor', icon:'🤖', name:'Executor', where:'Mac mini', persistent:true,
+      desc:'รับงานจาก Web Dispatch → รัน Claude Code headless แล้วรายงานกลับ', sched:'poll claude-tasks ตลอด' },
+    { key:'dojo', svc:null, icon:'🥋', name:'Poster Dojo', where:'Mac mini', persistent:false, link:'./dojo.html',
+      desc:'render → review (VLM) → queue → learn · RUBRIC โตจากคอมเมนต์', sched:'ทุก ~3 ชม.' },
+    { key:'pipeline', svc:'com.uplevel.priceindex', icon:'💱', name:'Card Pipeline', where:'Mac mini', persistent:false,
+      desc:'เฝ้า set ใหม่ (Lorcast/PTCG) → refresh ราคา+catalog → trigger Dojo', sched:'daily 07:00' },
+    { key:'heartbeat', svc:'com.championest.ops-heartbeat', icon:'💓', name:'Ops Heartbeat', where:'ทุกเครื่อง', persistent:true,
+      desc:'ส่งสถานะเครื่อง RAM/disk/uptime → Ops tab', sched:'ทุก ~1 นาที' },
+    { key:'tokens', svc:'com.championest.ops-tokens', icon:'💰', name:'Ops Tokens', where:'Mac mini', persistent:false,
+      desc:'รวมค่า token รายวัน → Ops tab', sched:'daily' },
+    { key:'sync', svc:null, icon:'🔄', name:'Claude Sync', where:'hook', persistent:false, alwaysOn:true,
+      desc:'ทุก turn เขียน journal + work-state → ต่องานข้ามเครื่อง', sched:'per-turn' },
+  ];
+  let _agentSvc = {};        // label → { running, fresh }
+  let _agentDojoFresh = false;
+
+  function renderAgents() {
+    const grid = document.getElementById('agents-grid');
+    if (!grid) return;
+    grid.innerHTML = AGENT_CATALOG.map(a => {
+      let running = false, fresh = false;
+      if (a.svc) { const s = _agentSvc[a.svc]; running = !!s?.running; fresh = !!s?.fresh; }
+      if (a.key === 'dojo') { running = _agentDojoFresh; fresh = _agentDojoFresh; }
+      if (a.alwaysOn) { running = true; fresh = true; }
+      let dot, badge;
+      if (a.persistent) {
+        const up = running && fresh;
+        dot = up ? 'bg-emerald-500' : 'bg-gray-600';
+        badge = up ? '<span class="text-emerald-400">● up</span>' : '<span class="text-gray-500">○ down</span>';
+      } else if (a.alwaysOn) {
+        dot = 'bg-indigo-500';
+        badge = '<span class="text-indigo-300">● on</span>';
+      } else {
+        dot = running ? 'bg-emerald-500 animate-pulse' : 'bg-sky-500';
+        badge = running ? '<span class="text-emerald-400">● running</span>' : '<span class="text-sky-400">◷ scheduled</span>';
+      }
+      const title = a.link
+        ? `<a href="${a.link}" class="text-white font-semibold text-sm hover:text-amber-300 transition">${a.icon} ${a.name} ↗</a>`
+        : `<span class="text-white font-semibold text-sm">${a.icon} ${a.name}</span>`;
+      return `<div class="bg-gray-900/60 border border-gray-800/60 rounded-2xl p-3.5 space-y-1.5">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="w-2 h-2 rounded-full ${dot} flex-shrink-0"></span>
+            ${title}
+          </div>
+          <span class="text-[10px] whitespace-nowrap">${badge}</span>
+        </div>
+        <p class="text-[11px] text-gray-400 leading-snug">${a.desc}</p>
+        <div class="flex items-center gap-2 text-[10px] text-gray-600 pt-0.5">
+          <span class="px-1.5 py-0.5 rounded bg-gray-800/80 text-gray-400">${a.where}</span>
+          <span>${a.sched}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderHats() {
+    const grid = document.getElementById('hats-grid');
+    if (!grid) return;
+    const HATS = [
+      { icon:'💻', name:'Dev',      desc:'build · debug · deploy' },
+      { icon:'🔍', name:'Research',  desc:'หาข้อมูล · เทียบทาง' },
+      { icon:'🛡️', name:'QA',        desc:'ตรวจก่อน deploy' },
+      { icon:'🎨', name:'Design',    desc:'UI/UX spec' },
+      { icon:'✍️', name:'Content',   desc:'โพส · คอนเทนต์' },
+      { icon:'🧠', name:'Ops',       desc:'จำ · สรุป · วางแผน' },
+    ];
+    grid.innerHTML = HATS.map(h => `<div class="bg-gray-950/50 border border-gray-800/60 rounded-xl px-2.5 py-2">
+      <div class="text-xs text-gray-200 font-medium">${h.icon} ${h.name}</div>
+      <div class="text-[10px] text-gray-500 mt-0.5">${h.desc}</div>
+    </div>`).join('');
+  }
+
+  window.loadAgents = function loadAgents() {
+    renderHats();
+    renderAgents();
+    onSnapshot(collection(db, 'machine-status'), snap => {
+      const map = {};
+      snap.docs.forEach(d => {
+        const m = d.data();
+        const fresh = m.updated_at && (Date.now() - (m.updated_at.toDate ? m.updated_at.toDate() : new Date(m.updated_at))) < 5*60000;
+        (m.services || []).forEach(s => {
+          const cur = map[s.label] || { running:false, fresh:false };
+          if (s.running && fresh) { cur.running = true; cur.fresh = true; }
+          map[s.label] = cur;
+        });
+      });
+      _agentSvc = map;
+      renderAgents();
+    }, err => console.warn('machine-status:', err?.code || err));
+
+    const dq = query(collection(db, 'poster-dojo'), orderBy('created_at', 'desc'), limit(1));
+    onSnapshot(dq, snap => {
+      const d = snap.docs[0]?.data();
+      const ts = d?.created_at;
+      _agentDojoFresh = !!(ts && (Date.now() - (ts.toDate ? ts.toDate() : new Date(ts))) < 6*3600000);
+      renderAgents();
+    }, err => console.warn('poster-dojo:', err?.code || err));
+  };
 }
 
 // ── Poster Dojo ───────────────────────────────────────────
