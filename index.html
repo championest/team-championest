@@ -1676,7 +1676,8 @@ window.dojoSubmit = async function(id, status) {
       showToast(status === 'approved' ? 'ผ่านแล้ว ✅' : 'ส่งให้แก้ 🔁', 'success');
     }
   } catch (e) { showToast('error: ' + e.message, 'error'); }
-=======
+};
+
 // ─── Web Dispatch: Google auth + send command ───────────────
 function applyAuthUI(user) {
   currentUser = user || null;
