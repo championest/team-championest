@@ -1566,6 +1566,12 @@ window.loadOps = function loadOps() {
 let _dojoOn = false;
 let _dojoDocs = [];
 let _dojoFilter = 'pending';
+let _dojoPendingRender = false;
+const _dojoDrafts = {};   // เก็บคอมเมนต์ที่พิมพ์ค้าง ต่อ poster id (กันโดน live-refresh ล้าง)
+// มี textarea ของ dojo ที่ focus อยู่ไหม (= Champ กำลังพิมพ์)
+const _dojoTyping = () => { const a = document.activeElement; return a && a.tagName === 'TEXTAREA' && a.id && a.id.startsWith('dc-'); };
+// re-render เฉพาะตอนไม่ได้พิมพ์ ไม่งั้นเลื่อนไว้ก่อน
+function renderDojoSafe() { if (_dojoTyping()) { _dojoPendingRender = true; return; } renderDojo(); }
 const _dojoAgo = ts => { if(!ts) return ''; const d = ts.toDate ? ts.toDate() : new Date(ts); const s = Math.floor((Date.now()-d)/1000); if(s<60) return s+'s'; if(s<3600) return Math.floor(s/60)+'m'; if(s<86400) return Math.floor(s/3600)+'h'; return Math.floor(s/86400)+'d'; };
 
 window.loadDojo = function() {
