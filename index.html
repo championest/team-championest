@@ -1308,8 +1308,9 @@
     const activeBtn = document.getElementById('tab-btn-' + tab);
     activeBtn.classList.add('dock-active');
 
-    document.getElementById('add-btn').style.display = tab === 'team' ? '' : 'none';
-    document.getElementById('sync-btn').style.display = tab === 'team' ? '' : 'none';
+    // add/sync edited the old persona roster — Team tab is now a live System Map, so keep them hidden
+    document.getElementById('add-btn').style.display = 'none';
+    document.getElementById('sync-btn').style.display = 'none';
 
     if (tab === 'skills' && !skillsRendered) renderSkills();   // render once, not on every open
     if (tab === 'dojo' && window.loadDojo) window.loadDojo();
