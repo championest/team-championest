@@ -1276,7 +1276,7 @@
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc, addDoc, query, orderBy, limit, onSnapshot, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAKxWv3FI7HrdrRlnJhsQbJ-97Pb_sdiOQ",
@@ -1552,17 +1552,38 @@ function applyAuthUI(user) {
 
 function initAuth() {
   onAuthStateChanged(auth, applyAuthUI);
+  // Complete a redirect-based sign-in round-trip (fallback path / popup-blocked browsers).
+  getRedirectResult(auth)
+    .then((res) => { if (res?.user) window.showToast?.('เข้าสู่ระบบแล้ว: ' + res.user.email, 'success'); })
+    .catch((e) => {
+      if (e?.code === 'auth/unauthorized-domain') {
+        window.showToast?.('โดเมน ' + location.hostname + ' ยังไม่ได้อนุญาตใน Firebase Auth — เพิ่มใน Authorized domains', 'error', 8000);
+      } else if (e?.code) {
+        console.warn('redirect sign-in failed:', e.code);
+      }
+    });
 }
 
 window.dispatchSignIn = async function() {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
   try {
-    await signInWithPopup(auth, new GoogleAuthProvider());
+    await signInWithPopup(auth, provider);
   } catch (e) {
-    console.warn('sign-in failed:', e?.code || e);
-    if (e?.code === 'auth/unauthorized-domain') {
-      window.showToast?.('โดเมนนี้ยังไม่ได้รับอนุญาต — เพิ่มใน Firebase Auth authorized domains ก่อน', 'warning');
-    } else if (e?.code !== 'auth/popup-closed-by-user' && e?.code !== 'auth/cancelled-popup-request') {
-      window.showToast?.('Sign-in ไม่สำเร็จ: ' + (e?.code || 'error'), 'error');
+    const code = e?.code || '';
+    console.warn('sign-in (popup) failed:', code || e);
+    // User intentionally closed/cancelled the popup — stay quiet.
+    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
+    // Popup blocked or unsupported environment → fall back to full-page redirect.
+    if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment' || code === 'auth/web-storage-unsupported') {
+      window.showToast?.('popup ถูกบล็อก — กำลังเปลี่ยนไปใช้ redirect…', 'info');
+      try { await signInWithRedirect(auth, provider); return; }
+      catch (e2) { console.warn('sign-in (redirect) failed:', e2?.code || e2); }
+    }
+    if (code === 'auth/unauthorized-domain') {
+      window.showToast?.('โดเมน ' + location.hostname + ' ยังไม่ได้อนุญาตใน Firebase Auth → เพิ่มใน Authentication > Settings > Authorized domains', 'error', 9000);
+    } else {
+      window.showToast?.('Sign-in ไม่สำเร็จ: ' + (code || 'error'), 'error');
     }
   }
 };
@@ -1608,7 +1629,7 @@ window.dispatchTask = async function() {
 };
 
 // ── Toast system ──────────────────────────────────────────
-window.showToast = function(msg, type = 'success') {
+window.showToast = function(msg, type = 'success', duration = 3500) {
   const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
   const colors = { success: 'rgba(34,197,94,0.15)', error: 'rgba(239,68,68,0.15)', info: 'rgba(99,102,241,0.15)', warning: 'rgba(245,158,11,0.15)' };
   const container = document.getElementById('toast-container');
@@ -1617,7 +1638,7 @@ window.showToast = function(msg, type = 'success') {
   t.style.borderColor = colors[type];
   t.innerHTML = `<span class="toast-icon">${icons[type]||'✅'}</span><span style="flex:1">${msg}</span><button class="toast-close" onclick="this.parentElement.remove()">×</button>`;
   container.appendChild(t);
-  setTimeout(() => { t.classList.add('exit'); setTimeout(() => t.remove(), 200); }, 3500);
+  setTimeout(() => { t.classList.add('exit'); setTimeout(() => t.remove(), 200); }, duration);
 };
 
 function loadStatsBar() {
