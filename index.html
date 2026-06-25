@@ -621,12 +621,101 @@
   </div>
 
   <!-- ── TEAM TAB ───────────────────────────────────────── -->
-  <div id="tab-team" class="space-y-3">
-    <div id="team-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-      <div class="skeleton h-20 rounded-xl"></div>
-      <div class="skeleton h-20 rounded-xl"></div>
-      <div class="skeleton h-20 rounded-xl"></div>
-      <div class="skeleton h-20 rounded-xl"></div>
+  <div id="tab-team" class="space-y-4">
+
+    <!-- ═══ WEB DISPATCH — สั่งงาน + monitor สด ═══ -->
+    <div class="bg-gray-900/70 border border-indigo-800/40 rounded-2xl overflow-hidden" style="box-shadow:0 0 30px rgba(99,102,241,0.07)">
+      <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.5),rgba(139,92,246,0.5),transparent)"></div>
+      <div class="p-4 space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="w-6 h-6 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center flex-shrink-0">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </div>
+            <div class="min-w-0">
+              <h3 class="text-sm font-semibold text-white">Web Dispatch</h3>
+              <p class="text-[11px] text-gray-500 truncate">สั่งงาน Claude → Mac mini executor รันให้ · ดูผลสดด้านล่าง</p>
+            </div>
+          </div>
+          <div id="dispatch-auth" class="flex items-center gap-2 flex-shrink-0">
+            <button id="dispatch-signin" onclick="dispatchSignIn()" class="hidden items-center gap-1.5 bg-white/95 hover:bg-white text-gray-800 text-xs font-medium px-3 py-1.5 rounded-lg transition">
+              <svg width="13" height="13" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"/></svg>
+              Sign in
+            </button>
+            <div id="dispatch-userbox" class="hidden items-center gap-2">
+              <span id="dispatch-user" class="text-[11px] text-gray-400 max-w-[140px] truncate"></span>
+              <button onclick="dispatchSignOut()" class="text-[11px] text-gray-500 hover:text-gray-300 underline transition">ออก</button>
+            </div>
+          </div>
+        </div>
+        <div id="dispatch-domain-warn" class="hidden text-[11px] text-amber-200 bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-2 leading-relaxed">
+          ⚠️ <b>Sign-in ใช้ไม่ได้บนโดเมนนี้:</b> <code id="dispatch-domain-host" class="text-amber-100 font-mono"></code> ยังไม่อยู่ใน Firebase Authorized domains<br>
+          <span class="text-amber-300/80">แก้:</span> <a href="https://console.firebase.google.com/project/up-level-guild/authentication/settings" target="_blank" rel="noopener" class="underline text-amber-100 hover:text-white">Firebase Console → Authentication → Settings → Authorized domains</a> → เพิ่ม host ด้านบน
+        </div>
+        <div id="dispatch-compose" class="hidden space-y-2">
+          <textarea id="dispatch-task" rows="3" class="w-full bg-gray-950/70 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500 resize-none" placeholder="พิมพ์คำสั่ง… เช่น 'เพิ่มปุ่ม dark mode ใน members tab' หรือ 'fix bug ตอนกด save แล้วหน้าเด้ง'"></textarea>
+          <div class="flex items-center gap-2">
+            <select id="dispatch-project" class="bg-gray-950/70 border border-gray-700 text-gray-300 text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500">
+              <option value="">— เลือก project —</option>
+              <option value="dashboard">team-dashboard</option>
+              <option value="guild">guild (members-web)</option>
+              <option value="kids">UpLevelKids</option>
+              <option value="marketplace">marketplace</option>
+              <option value="leaderboard">leaderboard</option>
+              <option value="lorcana-weekly">lorcana-weekly</option>
+              <option value="pkm-court">pkm-court</option>
+              <option value="pkm-deck">pkm-deck</option>
+              <option value="vera">vera-telegram</option>
+              <option value="poster">poster</option>
+              <option value="tpt">tpt-marketing</option>
+              <option value="hq">champ-hq</option>
+              <option value="general">general / อื่นๆ</option>
+            </select>
+            <button id="dispatch-send" onclick="dispatchTask()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition flex items-center justify-center gap-2">
+              <span>ส่งคำสั่ง</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+        </div>
+        <div id="dispatch-locked" class="hidden text-[11px] text-gray-500 bg-gray-950/50 border border-gray-800 rounded-xl px-3 py-2">
+          🔒 ดู feed ได้ แต่สั่งงานต้อง <span class="text-gray-300">Sign in ด้วยอีเมล admin</span> เท่านั้น
+        </div>
+        <div class="pt-1">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Live Feed</span>
+            <span id="dispatch-feed-status" class="flex items-center gap-1.5 text-[10px] text-gray-600"><span class="w-1.5 h-1.5 rounded-full bg-gray-600"></span>connecting…</span>
+          </div>
+          <div id="dispatch-feed" class="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+            <div class="text-gray-600 text-sm">Loading…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ AUTO AGENTS — process จริงที่รันเอง 24/7 ═══ -->
+    <div>
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">⚙️ Auto Agents · รันเอง 24/7</h2>
+        <span class="text-[10px] text-gray-600">บน Mac mini + เครื่องนี้</span>
+      </div>
+      <div id="agents-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div class="skeleton h-20 rounded-xl"></div>
+        <div class="skeleton h-20 rounded-xl"></div>
+        <div class="skeleton h-20 rounded-xl"></div>
+        <div class="skeleton h-20 rounded-xl"></div>
+      </div>
+    </div>
+
+    <!-- ═══ CLAUDE — 1 ตัว สวมหมวกตามงาน (ไม่ใช่ 15 คน) ═══ -->
+    <div>
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-widest">🧠 Claude · 1 ตัว สวมหมวกตามงาน</h2>
+        <button onclick="switchTab('workflow')" class="text-[10px] text-indigo-300 hover:text-indigo-200 underline">ดู flow ส่งงาน →</button>
+      </div>
+      <div class="bg-gray-900/60 border border-gray-800/60 rounded-2xl p-4 space-y-3">
+        <p class="text-[11px] text-gray-500 leading-relaxed">งานทุกอย่างทำโดย Claude เครื่องเดียว สลับ "หมวก" ตามงาน — ไม่ใช่ 15 คนแยกกัน. งานจริง log แบบ <span class="text-gray-300">per-project</span> (ดูแท็บ Projects / Live Activity)</p>
+        <div id="hats-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+      </div>
     </div>
   </div>
 
@@ -902,89 +991,6 @@
       <div class="flex items-center gap-2">
         <a href="./team-board.html" class="text-[10px] px-2 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25 transition-colors" title="ออฟฟิศ pixel-art ทีม + คิวงาน real-time">🎮 Pixel Board</a>
         <span id="ops-updated" class="text-[10px] text-gray-600">—</span>
-      </div>
-    </div>
-
-    <!-- ── Web Dispatch ───────────────────────────────────── -->
-    <div class="bg-gray-900/70 border border-indigo-800/40 rounded-2xl overflow-hidden" style="box-shadow:0 0 30px rgba(99,102,241,0.07)">
-      <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.5),rgba(139,92,246,0.5),transparent)"></div>
-      <div class="p-4 space-y-3">
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex items-center gap-2 min-w-0">
-            <div class="w-6 h-6 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center flex-shrink-0">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            </div>
-            <div class="min-w-0">
-              <h3 class="text-sm font-semibold text-white">Web Dispatch</h3>
-              <p class="text-[11px] text-gray-500 truncate">สั่งงาน Claude จากเว็บ → executor บน Mac mini รันให้</p>
-            </div>
-          </div>
-          <!-- Auth bar -->
-          <div id="dispatch-auth" class="flex items-center gap-2 flex-shrink-0">
-            <button id="dispatch-signin" onclick="dispatchSignIn()"
-              class="hidden items-center gap-1.5 bg-white/95 hover:bg-white text-gray-800 text-xs font-medium px-3 py-1.5 rounded-lg transition">
-              <svg width="13" height="13" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"/></svg>
-              Sign in
-            </button>
-            <div id="dispatch-userbox" class="hidden items-center gap-2">
-              <span id="dispatch-user" class="text-[11px] text-gray-400 max-w-[140px] truncate"></span>
-              <button onclick="dispatchSignOut()" class="text-[11px] text-gray-500 hover:text-gray-300 underline transition">ออก</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Domain authorization warning — shown when this host isn't in Firebase Authorized domains -->
-        <div id="dispatch-domain-warn" class="hidden text-[11px] text-amber-200 bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-2 leading-relaxed">
-          ⚠️ <b>Sign-in ใช้ไม่ได้บนโดเมนนี้:</b> <code id="dispatch-domain-host" class="text-amber-100 font-mono"></code> ยังไม่อยู่ใน Firebase Authorized domains<br>
-          <span class="text-amber-300/80">แก้:</span> <a href="https://console.firebase.google.com/project/up-level-guild/authentication/settings" target="_blank" rel="noopener" class="underline text-amber-100 hover:text-white">Firebase Console → Authentication → Settings → Authorized domains</a> → กด <b>Add domain</b> → ใส่ host ด้านบน
-        </div>
-
-        <!-- Compose box — admin only -->
-        <div id="dispatch-compose" class="hidden space-y-2">
-          <textarea id="dispatch-task" rows="3"
-            class="w-full bg-gray-950/70 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:border-indigo-500 resize-none"
-            placeholder="พิมพ์คำสั่ง… เช่น 'เพิ่มปุ่ม dark mode ใน members tab' หรือ 'fix bug ตอนกด save แล้วหน้าเด้ง'"></textarea>
-          <div class="flex items-center gap-2">
-            <select id="dispatch-project"
-              class="bg-gray-950/70 border border-gray-700 text-gray-300 text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500">
-              <option value="">— เลือก project —</option>
-              <option value="dashboard">team-dashboard</option>
-              <option value="guild">guild (members-web)</option>
-              <option value="kids">UpLevelKids</option>
-              <option value="marketplace">marketplace</option>
-              <option value="leaderboard">leaderboard</option>
-              <option value="lorcana-weekly">lorcana-weekly</option>
-              <option value="pkm-court">pkm-court</option>
-              <option value="pkm-deck">pkm-deck</option>
-              <option value="vera">vera-telegram</option>
-              <option value="poster">poster</option>
-              <option value="tpt">tpt-marketing</option>
-              <option value="hq">champ-hq</option>
-              <option value="general">general / อื่นๆ</option>
-            </select>
-            <button id="dispatch-send" onclick="dispatchTask()"
-              class="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition flex items-center justify-center gap-2">
-              <span>ส่งคำสั่ง</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- Non-admin hint -->
-        <div id="dispatch-locked" class="hidden text-[11px] text-gray-500 bg-gray-950/50 border border-gray-800 rounded-xl px-3 py-2">
-          🔒 ดู feed ได้ แต่สั่งงานต้อง <span class="text-gray-300">Sign in ด้วยอีเมล admin</span> เท่านั้น
-        </div>
-
-        <!-- Live feed -->
-        <div class="pt-1">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Live Feed</span>
-            <span id="dispatch-feed-status" class="flex items-center gap-1.5 text-[10px] text-gray-600"><span class="w-1.5 h-1.5 rounded-full bg-gray-600"></span>connecting…</span>
-          </div>
-          <div id="dispatch-feed" class="space-y-2 max-h-[460px] overflow-y-auto pr-1">
-            <div class="text-gray-600 text-sm">Loading…</div>
-          </div>
-        </div>
       </div>
     </div>
 
