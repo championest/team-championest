@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🎮 Pixel Team Board — Championest</title>
+<meta name="description" content="ออฟฟิศ pixel-art ของทีม Championest — ดูทีมทำงาน + คิวงาน real-time">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ─── Retro pastel / warm-orange brand palette ─────────────────── */
+:root{
+  --wall:#3a2a3e; --wall2:#4a3550;
+  --floor:#caa07a; --floor2:#b88a64; --floor-line:#a4764f;
+  --ink:#2b1d33;
+  --cream:#fff3e0; --orange:#ff9f45; --orange2:#ff7b29;
+  --amber:#ffd166; --pink:#ff8fab; --sky:#7ec8e3; --mint:#9ae6b4;
+  --rose:#ff6b6b; --board-wood:#8a5a32; --board-wood2:#6f4727;
+  --pixel:'Press Start 2P',monospace;
+  --ui:'Sarabun',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--ui);
+  font-size:15px;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #5a3f63 0%, transparent 60%),
+    linear-gradient(180deg,#2a1d30 0%, #1a1320 100%);
+  color:var(--cream);
+  min-height:100%;
+  padding:10px 10px 40px;
+  overflow-x:hidden;
+}
+img,canvas,.pix{image-rendering:pixelated;image-rendering:crisp-edges}
+a{color:var(--amber);text-decoration:none}
+
+.wrap{max-width:1000px;margin:0 auto}
+
+/* ─── Top bar ──────────────────────────────────────────────────── */
+.topbar{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  background:linear-gradient(180deg,#5a3f63,#3a2a3e);
+  border:3px solid #1a1320;
+  box-shadow:0 4px 0 #1a1320, inset 0 0 0 2px rgba(255,159,69,0.25);
+  border-radius:10px;
+  padding:10px 12px;margin-bottom:12px;
+}
+.title{font-family:var(--pixel);font-size:13px;color:var(--amber);text-shadow:2px 2px 0 #1a1320;line-height:1.5;flex:1;min-width:160px}
+.title small{font-family:var(--ui);display:block;font-size:12px;color:var(--cream);opacity:.75;margin-top:7px;letter-spacing:.3px}
+.pill{
+  font-family:var(--pixel);font-size:8px;padding:7px 9px;border-radius:6px;border:2px solid #1a1320;
+  background:#2b1d33;color:var(--cream);white-space:nowrap;line-height:1.6;
+  box-shadow:0 2px 0 #1a1320;
+}
+.pill b{color:var(--amber)}
+.pill .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.dot.on{background:#62e08a;box-shadow:0 0 8px #62e08a;animation:blink 1.4s steps(2) infinite}
+.dot.off{background:#777}
+.counts{display:flex;gap:6px;flex-wrap:wrap}
+.c-pend b{color:var(--amber)} .c-run b{color:var(--sky)} .c-done b{color:var(--mint)}
+
+@keyframes blink{50%{opacity:.4}}
+
+/* ─── Office viewport (virtual 1000xVH scaled to width) ─────────── */
+.office-viewport{
+  position:relative;width:100%;overflow:hidden;border-radius:12px;
+  border:3px solid #1a1320;box-shadow:0 6px 0 #1a1320;
+  margin-bottom:14px;background:var(--wall);
+}
+.office{
+  position:absolute;top:0;left:0;transform-origin:top left;
+  width:1000px;
+  background:
+    repeating-linear-gradient(90deg, var(--wall) 0 48px, var(--wall2) 48px 50px);
+}
+/* floor */
+.floor{
+  position:absolute;left:0;right:0;bottom:0;height:62%;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 58px, var(--floor-line) 58px 60px),
+    repeating-linear-gradient(0deg, transparent 0 58px, var(--floor-line) 58px 60px),
+    linear-gradient(180deg,var(--floor),var(--floor2));
+}
+.rug{position:absolute;border-radius:8px;background:
+  repeating-radial-gradient(circle at 50% 50%, var(--orange) 0 16px, var(--orange2) 16px 32px);
+  opacity:.55;border:3px solid #1a1320}
+.wall-deco{position:absolute;font-size:22px;filter:drop-shadow(2px 2px 0 #1a1320)}
+
+/* server rack for the executor robot */
+.server{
+  position:absolute;width:54px;height:78px;background:#22303a;border:3px solid #0e1418;
+  border-radius:6px;box-shadow:0 3px 0 #0e1418;
+}
+.server .led{position:absolute;left:8px;width:8px;height:5px;border-radius:1px;background:#2e4a3a}
+.server .led.a{top:10px;animation:srv 0.7s steps(2) infinite}
+.server .led.b{top:22px;background:#3a2e22;animation:srv 1.1s steps(2) infinite}
+.server .led.c{top:34px;animation:srv 0.5s steps(2) infinite}
+.server .slot{position:absolute;right:8px;left:24px;height:6px;background:#0e1418;border-radius:1px}
+@keyframes srv{0%{background:#62e08a;box-shadow:0 0 6px #62e08a}50%{background:#2e4a3a;box-shadow:none}}
+
+/* ─── Desk ─────────────────────────────────────────────────────── */
+.desk{position:absolute;top:0;left:0;width:84px;transform:translate(0,0)}
+.desk .top{
+  position:absolute;left:0;bottom:0;width:84px;height:16px;background:var(--board-wood);
+  border:3px solid #1a1320;border-radius:3px;box-shadow:0 3px 0 #1a1320;
+}
+.desk .top:before{content:"";position:absolute;left:6px;bottom:-12px;width:8px;height:12px;background:var(--board-wood2);border:2px solid #1a1320}
+.desk .top:after{content:"";position:absolute;right:6px;bottom:-12px;width:8px;height:12px;background:var(--board-wood2);border:2px solid #1a1320}
+.desk .monitor{
+  position:absolute;left:24px;bottom:14px;width:36px;height:26px;background:#0e1418;
+  border:3px solid #1a1320;border-radius:3px;overflow:hidden;
+}
+.desk .monitor .screen{
+  position:absolute;inset:2px;background:#0a2a22;font-size:5px;color:#62e08a;
+  line-height:6px;padding:1px 2px;white-space:pre;overflow:hidden;opacity:.35;
+}
+.desk.active .monitor .screen{opacity:1;background:#08221b}
+.desk.active .monitor{box-shadow:0 0 10px rgba(126,200,227,.6)}
+
+/* ─── Character (chibi) ────────────────────────────────────────── */
+.char{position:absolute;top:0;left:0;width:44px;height:60px;will-change:transform;z-index:10}
+.char .flip{position:absolute;left:0;top:0;width:44px;height:60px;transition:transform .12s steps(2)}
+.char.face-left .flip{transform:scaleX(-1)}
+.chibi{position:absolute;left:9px;bottom:6px;width:26px;height:50px}
+.chibi.bob{animation:bob 1.8s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-2px)}}
+
+.head{
+  position:absolute;left:0;top:0;width:26px;height:26px;font-size:20px;text-align:center;
+  line-height:26px;filter:drop-shadow(1px 1px 0 rgba(0,0,0,.4));
+}
+.body{
+  position:absolute;left:5px;top:23px;width:16px;height:16px;border:2px solid #1a1320;
+  border-radius:3px;box-shadow:inset 0 -4px 0 rgba(0,0,0,.2);
+}
+.arm{position:absolute;top:25px;width:5px;height:11px;background:inherit;border:2px solid #1a1320;border-radius:2px}
+.arm.l{left:1px} .arm.r{right:1px}
+.leg{position:absolute;top:38px;width:6px;height:9px;background:#3a2a3e;border:2px solid #1a1320;border-radius:0 0 2px 2px}
+.leg.l{left:5px} .leg.r{left:13px}
+
+/* walking — legs swing */
+.char.walking .leg.l{animation:stepA .32s steps(2) infinite}
+.char.walking .leg.r{animation:stepB .32s steps(2) infinite}
+.char.walking .arm.l{animation:stepB .32s steps(2) infinite}
+.char.walking .arm.r{animation:stepA .32s steps(2) infinite}
+@keyframes stepA{50%{transform:translateY(-3px) rotate(-12deg)}}
+@keyframes stepB{0%,49%{transform:translateY(-3px) rotate(12deg)}50%{transform:none}}
+
+/* working — sit & type (arms hammering) */
+.char.working .leg{opacity:0}
+.char.working .arm.l{animation:typeA .18s steps(2) infinite}
+.char.working .arm.r{animation:typeB .18s steps(2) infinite}
+@keyframes typeA{50%{transform:translateY(-3px)}}
+@keyframes typeB{0%,49%{transform:translateY(-3px)}50%{transform:none}}
+
+.name{
+  position:absolute;left:-12px;right:-12px;bottom:-6px;text-align:center;font-size:10px;font-weight:600;
+  color:var(--cream);text-shadow:1px 1px 0 #1a1320;white-space:nowrap;
+}
+.status{
+  position:absolute;left:0;right:0;top:-14px;text-align:center;font-size:13px;
+  filter:drop-shadow(1px 1px 0 rgba(0,0,0,.4));
+}
+.char.working .status{animation:hop .5s ease-in-out infinite}
+@keyframes hop{50%{transform:translateY(-5px)}}
+
+/* speech bubble */
+.bubble{
+  position:absolute;left:50%;top:-44px;transform:translateX(-50%) scale(0);
+  transform-origin:bottom center;
+  background:var(--cream);color:var(--ink);font-size:11px;font-weight:500;line-height:1.45;
+  border:3px solid #1a1320;border-radius:8px;padding:5px 7px;min-width:60px;max-width:150px;
+  text-align:center;box-shadow:0 3px 0 #1a1320;transition:transform .18s steps(3);
+  z-index:30;pointer-events:none;white-space:normal;word-break:break-word;
+}
+.bubble.show{transform:translateX(-50%) scale(1)}
+.bubble:after{content:"";position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);
+  width:0;height:0;border:6px solid transparent;border-top-color:#1a1320}
+
+/* robot tint */
+.char.robot .head{font-size:22px}
+.char.robot .status{animation:hop .5s ease-in-out infinite}
+
+/* sparkle */
+.sparkle{position:absolute;font-size:14px;pointer-events:none;z-index:40;animation:spk .9s ease-out forwards}
+@keyframes spk{0%{transform:translateY(0) scale(.4);opacity:0}
+  20%{opacity:1}100%{transform:translateY(-34px) scale(1.2);opacity:0}}
+
+/* ─── Quest board (wooden) ─────────────────────────────────────── */
+.questboard{
+  background:
+    repeating-linear-gradient(90deg,var(--board-wood) 0 60px,var(--board-wood2) 60px 62px);
+  border:4px solid #1a1320;border-radius:12px;box-shadow:0 6px 0 #1a1320;
+  padding:12px;margin-bottom:14px;position:relative;
+}
+.questboard:before,.questboard:after{content:"";position:absolute;top:8px;width:12px;height:12px;
+  border-radius:50%;background:#caa07a;border:3px solid #1a1320}
+.questboard:before{left:8px}.questboard:after{right:8px}
+.qb-title{font-family:var(--pixel);font-size:10px;color:var(--cream);text-align:center;margin-bottom:12px;
+  text-shadow:2px 2px 0 #1a1320}
+.qb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+
+.quest{
+  position:relative;background:var(--cream);color:var(--ink);border:3px solid #1a1320;
+  border-radius:7px;padding:9px 9px 8px;box-shadow:0 3px 0 #1a1320;
+}
+.quest.card-new{animation:slidein .45s cubic-bezier(.2,1.3,.4,1)}
+@keyframes slidein{from{transform:translateY(-14px) scale(.9);opacity:0}}
+.quest .pin{position:absolute;left:50%;top:-9px;transform:translateX(-50%);font-size:12px;
+  filter:drop-shadow(1px 1px 0 rgba(0,0,0,.3))}
+.quest .qtask{font-size:14px;font-weight:500;line-height:1.5;margin:7px 0 8px;word-break:break-word;
+  display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.quest .qmeta{font-size:11px;line-height:1.55;color:#6b4a2f;opacity:.9}
+.quest .qstats{font-size:11px;font-weight:600;color:#2b1d33;margin-top:5px}
+.quest .badge{display:inline-block;font-size:11px;font-weight:700;padding:4px 8px;border-radius:5px;border:2px solid #1a1320}
+
+.q-pending{background:#fff0d6}
+.q-pending .badge{background:var(--amber)}
+.q-running{background:#e3f4fb;border-color:#1a1320;box-shadow:0 0 14px rgba(126,200,227,.7),0 3px 0 #1a1320;
+  animation:glow 1.3s ease-in-out infinite}
+.q-running .badge{background:var(--sky);color:#06343f}
+@keyframes glow{50%{box-shadow:0 0 22px rgba(126,200,227,.95),0 3px 0 #1a1320}}
+.q-done{opacity:.6;background:#e6f6ea}
+.q-done .badge{background:var(--mint);color:#0a3a22}
+.q-failed{background:#ffe1e1;border-color:#7a1d1d}
+.q-failed .badge{background:var(--rose);color:#3a0a0a}
+
+.empty{font-size:13px;color:var(--cream);opacity:.75;text-align:center;padding:18px;line-height:1.8}
+
+/* ─── Footer / links ───────────────────────────────────────────── */
+.footer{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;
+  font-size:12px;opacity:.85;padding:0 4px}
+.btn{display:inline-block;font-size:12px;font-weight:600;padding:9px 13px;border:2px solid #1a1320;border-radius:7px;
+  background:var(--orange);color:#1a1320;box-shadow:0 3px 0 #1a1320;line-height:1.6}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 #1a1320}
+
+@media (max-width:560px){
+  .title{font-size:11px}
+  .qb-grid{grid-template-columns:1fr}
+  .pill{font-size:6px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ─── Top bar ─── -->
+  <div class="topbar">
+    <div class="title">🎮 PIXEL TEAM BOARD
+      <small>ออฟฟิศทีม Championest — real-time</small>
+    </div>
+    <div class="counts">
+      <span class="pill" id="exec-pill"><span class="dot off" id="exec-dot"></span><span id="exec-label">executor…</span></span>
+      <span class="pill c-pend">⏳ <b id="c-pend">0</b> pending</span>
+      <span class="pill c-run">⚙️ <b id="c-run">0</b> running</span>
+      <span class="pill c-done">✅ <b id="c-done">0</b> done</span>
+    </div>
+  </div>
+
+  <!-- ─── Office ─── -->
+  <div class="office-viewport" id="viewport">
+    <div class="office" id="office">
+      <div class="floor"></div>
+      <div class="rug" id="rug"></div>
+      <span class="wall-deco" id="clock" style="left:470px;top:14px">🕐</span>
+      <span class="wall-deco" style="left:30px;top:16px">🪟</span>
+      <span class="wall-deco" style="left:900px;top:16px">🪟</span>
+      <span class="wall-deco" style="left:60px;bottom:6px">🪴</span>
+      <span class="wall-deco" style="right:30px;bottom:6px">🪴</span>
+      <span class="wall-deco" style="left:430px;top:46px;font-size:13px">📋 quests</span>
+      <!-- server rack -->
+      <div class="server" id="server">
+        <div class="led a"></div><div class="led b"></div><div class="led c"></div>
+        <div class="slot" style="top:50px"></div>
+        <div class="slot" style="top:62px"></div>
+      </div>
+      <!-- desks + characters injected by JS -->
+    </div>
+  </div>
+
+  <!-- ─── Quest board ─── -->
+  <div class="questboard">
+    <div class="qb-title">📜 QUEST BOARD — คิวงาน</div>
+    <div class="qb-grid" id="quests"><div class="empty">กำลังโหลดคิวงาน…</div></div>
+  </div>
+
+  <div class="footer">
+    <a class="btn" href="./index.html" id="back-link">← กลับ Dashboard (Ops)</a>
+    <span>up-level-guild · pixel office v1</span>
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, doc, query, orderBy, limit, onSnapshot }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAKxWv3FI7HrdrRlnJhsQbJ-97Pb_sdiOQ",
+  authDomain: "up-level-guild.firebaseapp.com",
+  projectId: "up-level-guild",
+  storageBucket: "up-level-guild.firebasestorage.app",
+  messagingSenderId: "721710985300",
+  appId: "1:721710985300:web:c51e13963373a6feadbdc1"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ─── helpers ─────────────────────────────────────────────────────
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const clip = (s,n) => { s=String(s||''); return s.length>n ? s.slice(0,n-1)+'…' : s; };
+const ago = ts => { if(!ts) return ''; const d = ts.toDate?ts.toDate():new Date(ts); const s=Math.floor((Date.now()-d)/1000);
+  if(s<60) return s+'s'; if(s<3600) return Math.floor(s/60)+'m'; if(s<86400) return Math.floor(s/3600)+'h'; return Math.floor(s/86400)+'d'; };
+const todayStr = () => new Date().toLocaleDateString('sv-SE');
+const isToday = ts => { if(!ts) return false; const d = ts.toDate?ts.toDate():new Date(ts); return d.toLocaleDateString('sv-SE')===todayStr(); };
+
+// fallback emoji + colour per member id / name keyword
+const COLOR = { indigo:'#7c83ff', violet:'#b18bff', emerald:'#5fd99a', rose:'#ff7a8a',
+  amber:'#ffce5c', sky:'#6fc7e8', pink:'#ff9ec4', teal:'#54d6c4' };
+const EMOJI = { ace:'⭐', kai:'💻', nova:'🎨', sam:'🔍', jade:'🛡️', iris:'🧠', pixel:'📐',
+  bolt:'🔧', rena:'💡', max:'📊', sage:'📚', vera:'📋', flux:'📈', lens:'🎬', nong:'🎓' };
+function emojiFor(m){
+  if(m.emoji) return m.emoji;
+  if(EMOJI[m.id]) return EMOJI[m.id];
+  const n=(m.name||'').toLowerCase();
+  if(n.includes('ace'))return'⭐'; if(n.includes('cody'))return'💻'; if(n.includes('coco'))return'🎨';
+  if(n.includes('scout'))return'🔍'; if(n.includes('spoty'))return'🛡️'; if(n.includes('memo'))return'🧠';
+  if(n.includes('arty'))return'📐'; if(n.includes('amy'))return'💡'; if(n.includes('pi'))return'📊';
+  return '🙂';
+}
+function colorFor(m){ return COLOR[m.color] || '#7c83ff'; }
+
+// default roster — used when Firestore `team-config` is empty/unreadable so the office never renders empty
+const DEFAULT_ROSTER=[
+  {id:'ace',name:'Ace',emoji:'⭐',color:'amber',order:0},
+  {id:'cody',name:'Cody',emoji:'💻',color:'indigo',order:1},
+  {id:'coco',name:'Coco',emoji:'🎨',color:'pink',order:2},
+  {id:'scout',name:'Scout',emoji:'🔍',color:'sky',order:3},
+  {id:'spoty',name:'Spoty',emoji:'🛡️',color:'emerald',order:4},
+  {id:'memo',name:'Memo',emoji:'🧠',color:'violet',order:5},
+  {id:'arty',name:'Arty',emoji:'📐',color:'rose',order:6},
+  {id:'bolt',name:'Bolt',emoji:'🔧',color:'teal',order:7},
+  {id:'amy',name:'Amy',emoji:'💡',color:'amber',order:8},
+  {id:'pi',name:'Pi',emoji:'📊',color:'indigo',order:9},
+  {id:'book',name:'Book',emoji:'📚',color:'violet',order:10},
+  {id:'vera',name:'Vera',emoji:'📋',color:'sky',order:11},
+  {id:'lens',name:'Lens',emoji:'🎬',color:'rose',order:12},
+  {id:'nong',name:'Nong',emoji:'🎓',color:'emerald',order:13},
+  {id:'spike',name:'Spike',emoji:'🐕',color:'teal',order:14},
+];
+
+// task → which member is "responsible" (keyword heuristic, stable per task id)
+function classifyMember(taskText, ids){
+  const t=(taskText||'').toLowerCase();
+  const has = (...ws)=>ws.some(w=>t.includes(w));
+  const pick = id => ids.includes(id) ? id : null;
+  let r=null;
+  if(has('deploy','build','code','โค้ด','debug','bug','fix','refactor','feature','สร้างไฟล์','html','script')) r=pick('kai');
+  else if(has('content','post','โพสต์','copy','script','caption','social','tiktok','คอนเทนต์')) r=pick('nova');
+  else if(has('research','วิจัย','หาข้อมูล','compare','market')) r=pick('sam');
+  else if(has('review','qa','test','ทดสอบ','security','audit','ตรวจ')) r=pick('jade');
+  else if(has('design','ui','ux','wireframe','ดีไซน์','layout')) r=pick('pixel');
+  else if(has('image','รูป','thumbnail','visual','video','วิดีโอ')) r=pick('lens');
+  else if(has('math','physics','problem set','ฟิสิกส์','คณิต')) r=pick('max');
+  else if(has('memory','second brain','summary','สรุป','decision')) r=pick('iris');
+  else if(has('form','document','เอกสาร','deadline','admin')) r=pick('vera');
+  return r;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  OFFICE  — virtual coord space, scaled to fit width
+// ════════════════════════════════════════════════════════════════
+const VW = 1000;
+let VH = 560;
+const viewport = document.getElementById('viewport');
+const office   = document.getElementById('office');
+const ROBOT_HOME = { x:96, y:330 };   // by the server rack
+
+let scale=1;
+function fit(){
+  scale = Math.min(1, viewport.clientWidth / VW);
+  office.style.transform = `scale(${scale})`;
+  office.style.height = VH+'px';
+  viewport.style.height = (VH*scale)+'px';
+}
+window.addEventListener('resize', fit);
+
+// character registry: id -> state object
+const chars = {};          // members + 'robot'
+let memberOrder = [];      // member ids in display order
+const taskAssign = {};     // taskId -> memberId (stable)
+const seenTasks = {};      // taskId -> last status (transition detection)
+const seenQuestIds = new Set();
+const eventQ = [];         // dispatch animation queue
+let busy = false;          // a dispatch sequence in progress
+
+// ─── build desks + characters from team-config ───────────────────
+function layout(members){
+  // keep ace first as manager, then the rest
+  members = members.slice().sort((a,b)=>(a.order??99)-(b.order??99));
+  memberOrder = members.map(m=>m.id);
+
+  const cols = 5;
+  const startX = 130, gapX = 186;
+  const startY = 168, gapY = 150;
+  const rows = Math.ceil(members.length/cols);
+  VH = Math.max(540, startY + rows*gapY + 30);
+  const rug=document.getElementById('rug');
+  rug.style.left='300px'; rug.style.top=(VH-150)+'px'; rug.style.width='400px'; rug.style.height='110px';
+  document.getElementById('server').style.top = (ROBOT_HOME.y-50)+'px';
+  document.getElementById('server').style.left = (ROBOT_HOME.x-90)+'px';
+
+  // remove old (re-layout on team change) — reset registry so robot is rebuilt too
+  office.querySelectorAll('.desk,.char').forEach(e=>e.remove());
+  for(const k in chars) delete chars[k];
+
+  members.forEach((m,i)=>{
+    const col=i%cols, row=Math.floor(i/cols);
+    const dx = startX + col*gapX;
+    const dy = startY + row*gapY;
+    // desk
+    const desk=document.createElement('div');
+    desk.className='desk'; desk.id='desk-'+m.id;
+    desk.style.transform=`translate(${dx-42}px,${dy-60}px)`;
+    desk.innerHTML=`<div class="monitor"><span class="screen"></span></div><div class="top"></div>`;
+    office.appendChild(desk);
+    // character
+    const home={ x:dx, y:dy+40 };
+    const sit ={ x:dx, y:dy-2 };
+    const c=mkChar(m.id, m.name, emojiFor(m), colorFor(m), home, sit, false);
+    chars[m.id]=c;
+  });
+
+  // executor robot — its home is the server rack, always grinding
+  if(!chars.robot){
+    const rc=mkChar('robot','Executor','🤖','#9fb4c4',
+      { x:ROBOT_HOME.x, y:ROBOT_HOME.y }, { x:ROBOT_HOME.x, y:ROBOT_HOME.y-2 }, true);
+    chars.robot=rc;
+  }
+  fit();
+}
+
+function mkChar(id,name,emoji,color,home,sit,isRobot){
+  const el=document.createElement('div');
+  el.className='char'+(isRobot?' robot':'');
+  el.id='char-'+id;
+  el.innerHTML=`
+    <div class="bubble"></div>
+    <div class="status">💤</div>
+    <div class="flip">
+      <div class="chibi bob">
+        <div class="head">${emoji}</div>
+        <div class="arm l" style="background:${color}"></div>
+        <div class="arm r" style="background:${color}"></div>
+        <div class="body" style="background:${color}"></div>
+        <div class="leg l"></div><div class="leg r"></div>
+      </div>
+    </div>
+    <div class="name">${esc(clip(name,10))}</div>`;
+  office.appendChild(el);
+  const c={
+    id,name,el,
+    bubbleEl:el.querySelector('.bubble'),
+    statusEl:el.querySelector('.status'),
+    flipEl:el.querySelector('.flip'),
+    home, sit, isRobot,
+    x:home.x, y:home.y, tx:home.x, ty:home.y,
+    speed:46, state:'idle', moving:false,
+    nextDecision: now()+rand(400,2200),
+    bubbleUntil:0, workTask:null, face:1,
+  };
+  place(c);
+  setStatus(c,'💤');
+  return c;
+}
+
+function now(){ return performance.now(); }
+function rand(a,b){ return a+Math.random()*(b-a); }
+function place(c){ c.el.style.transform=`translate(${(c.x-22)}px,${(c.y-54)}px)`; }
+function setFace(c,dir){ if(dir&&dir!==c.face){ c.face=dir; c.el.classList.toggle('face-left',dir<0);} }
+function setStatus(c,s){ if(c.statusEl.textContent!==s) c.statusEl.textContent=s; }
+function walkTo(c,x,y){ c.tx=Math.max(60,Math.min(VW-60,x)); c.ty=Math.max(150,Math.min(VH-30,y)); c.moving=true; }
+
+function say(c,text,ms=2600){
+  c.bubbleEl.innerHTML=esc(text);
+  c.bubbleEl.classList.add('show');
+  c.bubbleUntil=now()+ms;
+}
+function hush(c){ c.bubbleEl.classList.remove('show'); c.bubbleUntil=0; }
+
+// ─── per-character behaviour ─────────────────────────────────────
+function startWorking(c, taskText){
+  c.workTask=taskText;
+  c.state='working';
+  c.el.classList.remove('walking');
+  walkTo(c, c.sit.x, c.sit.y);   // walk to own desk, then sit
+}
+function stopWorking(c){
+  c.workTask=null; c.state='idle';
+  c.el.classList.remove('working');
+  setStatus(c,'💤');
+  deskActive(c.id,false);
+  c.nextDecision=now()+rand(200,1200);
+}
+function deskActive(id,on){
+  const d=document.getElementById('desk-'+id);
+  if(d) d.classList.toggle('active',on);
+}
+
+function idleDecide(c){
+  // occasionally emote, wander, or pair-chat
+  const r=Math.random();
+  if(r<0.18){
+    say(c, ['☕','💭','🎵','✨','👀','😺'][Math.floor(Math.random()*6)], 1600);
+    c.nextDecision=now()+rand(1600,3200);
+  } else if(r<0.42){
+    // pair-chat: walk near a random other idle char
+    const mates=Object.values(chars).filter(o=>o!==c && !o.isRobot && o.state==='idle');
+    if(mates.length){
+      const m=mates[Math.floor(Math.random()*mates.length)];
+      walkTo(c, m.x+rand(-30,30), m.y+rand(-6,10));
+      c.afterArrive=()=>{ say(c,['คุยงานเดี๋ยว','ว่างมั้ย?','เป็นไงบ้าง','...'][Math.floor(Math.random()*4)],1800);
+        c.nextDecision=now()+rand(1800,3200); };
+    } else c.nextDecision=now()+rand(800,2000);
+  } else if(r<0.8){
+    walkTo(c, rand(110,VW-110), rand(170,VH-50));
+    c.afterArrive=()=>{ c.nextDecision=now()+rand(900,2600); };
+  } else {
+    c.nextDecision=now()+rand(1200,3000);  // just stand
+  }
+}
+
+// ─── main loop (delta-time, smooth) ──────────────────────────────
+let last=now();
+function tick(t){
+  const dt=Math.min(0.05,(t-last)/1000); last=t;
+
+  // process one dispatch event at a time
+  if(!busy && eventQ.length){ runDispatch(eventQ.shift()); }
+
+  for(const id in chars){
+    const c=chars[id];
+
+    // bubble timeout
+    if(c.bubbleUntil && t>c.bubbleUntil) hush(c);
+
+    if(c.moving){
+      const dx=c.tx-c.x, dy=c.ty-c.y, d=Math.hypot(dx,dy);
+      if(d<2.5){
+        c.x=c.tx; c.y=c.ty; c.moving=false;
+        c.el.classList.remove('walking');
+        if(c.state==='working'){
+          c.el.classList.add('working'); setStatus(c,'⚙️'); deskActive(c.id,true);
+          if(c.workTask) say(c, '⚙️ '+clip(c.workTask,46), 5200);
+        }
+        const cb=c.afterArrive; c.afterArrive=null; if(cb) cb();
+      } else {
+        const v=(c.state==='working'?70:c.isRobot?40:c.speed)*dt;
+        c.x+=dx/d*Math.min(v,d); c.y+=dy/d*Math.min(v,d);
+        setFace(c, dx<0?-1:1);
+        if(!c.el.classList.contains('walking')){ c.el.classList.add('walking'); c.el.classList.remove('working'); }
+      }
+      place(c);
+    } else if(c.state==='idle' && !busy && t>c.nextDecision){
+      idleDecide(c);
+    }
+
+    // robot keeps typing whenever it has work
+    if(c.isRobot && c.state==='working' && !c.moving && Math.random()<0.04){
+      typeScreen('robot');
+    }
+    if(c.state==='working' && !c.moving && Math.random()<0.05){
+      typeScreen(c.id);
+    }
+  }
+  requestAnimationFrame(tick);
+}
+
+// tiny code rain on the active desk monitor
+const SNIP=['const x=42','=> {}','return ok','git push','npm run','if(a){','await f()','db.get()','#ff9f45','<div/>','})()','for(i++)'];
+function typeScreen(id){
+  const d=document.getElementById('desk-'+id); if(!d) return;
+  const s=d.querySelector('.screen'); if(!s) return;
+  const lines=s.textContent.split('\n');
+  lines.push(SNIP[Math.floor(Math.random()*SNIP.length)]);
+  while(lines.length>4) lines.shift();
+  s.textContent=lines.join('\n');
+}
+
+// ─── dispatch animation: Ace walks to worker, hands off ──────────
+function runDispatch(ev){
+  const ace=chars.ace, w=chars[ev.memberId];
+  if(!w){ return; }
+  if(!ace || ace===w){   // no manager (or task is ace's) → worker just starts
+    startWorking(w, ev.taskText); return;
+  }
+  busy=true;
+  const back={x:ace.x,y:ace.y};
+  ace.state='dispatch';
+  walkTo(ace, w.home.x+34, w.home.y+4);
+  ace.afterArrive=()=>{
+    setFace(ace, w.home.x<ace.x?-1:1);
+    say(ace, '📨 งานเข้า '+esc(clip(w.name,8))+'!', 2200);
+    setTimeout(()=>{
+      startWorking(w, ev.taskText);
+      walkTo(ace, back.x, back.y);
+      ace.afterArrive=()=>{ ace.state='idle'; ace.nextDecision=now()+rand(600,1800); busy=false; };
+    }, 1300);
+  };
+}
+
+// ════════════════════════════════════════════════════════════════
+//  FIRESTORE — live data
+// ════════════════════════════════════════════════════════════════
+
+// team-config → office population
+let rosterShown=false;
+onSnapshot(collection(db,'team-config'), snap=>{
+  if(snap.empty){ if(!rosterShown){ layout(DEFAULT_ROSTER); rosterShown=true; } return; }
+  const members=snap.docs.map(d=>({id:d.id,...d.data()}));
+  rosterShown=true; layout(members);
+}, err=>{ console.warn('team-config:',err?.code||err); if(!rosterShown){ layout(DEFAULT_ROSTER); rosterShown=true; } });
+
+// executor heartbeat → online pill
+onSnapshot(doc(db,'claude-executor','heartbeat'), snap=>{
+  const dot=document.getElementById('exec-dot'), lbl=document.getElementById('exec-label');
+  if(!snap.exists()){ dot.className='dot off'; lbl.textContent='executor offline'; return; }
+  const t=snap.data().last_seen; const d=t?.toDate?t.toDate():null;
+  const fresh = d && (Date.now()-d) < 2*60000;
+  dot.className='dot '+(fresh?'on':'off');
+  lbl.innerHTML = fresh ? 'executor <b>online</b>' : 'executor '+ago(t)+' ago';
+}, err=>console.warn('heartbeat:',err?.code||err));
+
+// claude-tasks → quest board + character orchestration
+const tq=query(collection(db,'claude-tasks'), orderBy('created_at','desc'), limit(30));
+onSnapshot(tq, snap=>{
+  const tasks=snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderQuests(tasks);
+  orchestrate(tasks);
+}, err=>{
+  console.warn('claude-tasks:',err?.code||err);
+  document.getElementById('quests').innerHTML='<div class="empty">โหลดคิวงานไม่ได้ ('+esc(err?.code||'error')+')</div>';
+});
+
+// ─── counts + characters from tasks ──────────────────────────────
+function orchestrate(tasks){
+  const ids = memberOrder.length ? memberOrder : [];
+  let pend=0, run=0, doneToday=0;
+  const runningByMember={};
+
+  tasks.forEach(t=>{
+    if(t.status==='pending') pend++;
+    if(t.status==='running') run++;
+    if(t.status==='done' && isToday(t.created_at)) doneToday++;
+
+    // stable member assignment
+    if(!taskAssign[t.id]){
+      taskAssign[t.id] = classifyMember(t.task, ids)
+        || (ids.length ? ids[(hashId(t.id))%ids.length] : null);
+    }
+    const mid=taskAssign[t.id];
+    if(t.status==='running' && mid) runningByMember[mid]=t.task;
+
+    // transitions
+    const prev=seenTasks[t.id];
+    if(prev!==t.status){
+      if(t.status==='pending' && prev===undefined && Object.keys(seenTasks).length){
+        // genuinely new pending task arrived → dispatch animation
+        if(mid && chars[mid]) eventQ.push({memberId:mid, taskText:t.task});
+      }
+      if(t.status==='done' && prev && prev!=='done'){
+        if(mid && chars[mid]) sparkleAt(chars[mid]);
+      }
+      seenTasks[t.id]=t.status;
+    }
+  });
+
+  document.getElementById('c-pend').textContent=pend;
+  document.getElementById('c-run').textContent=run;
+  document.getElementById('c-done').textContent=doneToday;
+
+  // robot grinds whenever anything is running
+  const robot=chars.robot;
+  if(robot){
+    if(run>0 && robot.state!=='working'){ robot.workTask='executor running…'; robot.state='working'; robot.el.classList.add('working'); setStatus(robot,'⚙️'); deskActive('robot',false); }
+    else if(run===0 && robot.state==='working'){ robot.state='idle'; robot.el.classList.remove('working'); setStatus(robot,'🔋'); }
+  }
+
+  // sync each member's working/idle to running tasks
+  for(const id of ids){
+    const c=chars[id]; if(!c) continue;
+    const task=runningByMember[id];
+    if(task && c.state!=='working' && c.state!=='dispatch'){
+      // if no pending-dispatch already queued for it, start working directly
+      if(!eventQ.some(e=>e.memberId===id)) startWorking(c, task);
+      else if(c.workTask!==task) c.workTask=task;
+    } else if(!task && c.state==='working'){
+      stopWorking(c);
+    } else if(task && c.state==='working'){
+      c.workTask=task;
+    }
+  }
+}
+
+function hashId(s){ let h=0; for(let i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))|0; } return Math.abs(h); }
+
+function sparkleAt(c){
+  for(let i=0;i<5;i++){
+    const sp=document.createElement('div');
+    sp.className='sparkle'; sp.textContent=['✨','⭐','🌟','💫'][i%4];
+    sp.style.left=(c.x-10+rand(-16,16))+'px';
+    sp.style.top=(c.y-50+rand(-8,8))+'px';
+    sp.style.animationDelay=(i*0.08)+'s';
+    office.appendChild(sp);
+    setTimeout(()=>sp.remove(),1100);
+  }
+  say(c,'เสร็จแล้ว! ✅',2000);
+}
+
+// ─── quest board render ──────────────────────────────────────────
+const META={
+  pending:{cls:'q-pending',pin:'📌',label:'รอคิว'},
+  running:{cls:'q-running',pin:'⚙️',label:'กำลังทำ'},
+  done:   {cls:'q-done',   pin:'✅',label:'เสร็จ'},
+  failed: {cls:'q-failed', pin:'❌',label:'ล้มเหลว'},
+};
+function renderQuests(tasks){
+  const el=document.getElementById('quests');
+  if(!tasks.length){ el.innerHTML='<div class="empty">ยังไม่มีงานในคิว 🌙<br>สั่งงานผ่าน Telegram (Vera) ได้เลย</div>'; return; }
+  el.innerHTML=tasks.map(t=>{
+    const m=META[t.status]||{cls:'',pin:'•',label:esc(t.status||'?')};
+    const isNew=!seenQuestIds.has(t.id); seenQuestIds.add(t.id);
+    const meta=[ t.project&&('📁'+esc(t.project)), t.source&&esc(t.source),
+      t.created_by&&esc(t.created_by), t.created_at&&(ago(t.created_at)+' ago') ].filter(Boolean).join(' · ');
+    const stats=[ t.duration_s!=null?('⏱ '+t.duration_s+'s'):null,
+      t.cost_usd!=null?('💰 $'+Number(t.cost_usd).toFixed(2)):null ].filter(Boolean).join('   ');
+    return `<div class="quest ${m.cls} ${isNew?'card-new':''}">
+      <div class="pin">${m.pin}</div>
+      <span class="badge">${m.pin} ${m.label}</span>
+      <div class="qtask">${esc(clip(t.task||'(ไม่มีรายละเอียด)',160))}</div>
+      <div class="qmeta">${meta||'&nbsp;'}</div>
+      ${stats?`<div class="qstats">${stats}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// kick off the animation loop
+fit();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
