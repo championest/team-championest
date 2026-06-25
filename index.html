@@ -918,6 +918,12 @@
           </div>
         </div>
 
+        <!-- Domain authorization warning — shown when this host isn't in Firebase Authorized domains -->
+        <div id="dispatch-domain-warn" class="hidden text-[11px] text-amber-200 bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-2 leading-relaxed">
+          ⚠️ <b>Sign-in ใช้ไม่ได้บนโดเมนนี้:</b> <code id="dispatch-domain-host" class="text-amber-100 font-mono"></code> ยังไม่อยู่ใน Firebase Authorized domains<br>
+          <span class="text-amber-300/80">แก้:</span> <a href="https://console.firebase.google.com/project/up-level-guild/authentication/settings" target="_blank" rel="noopener" class="underline text-amber-100 hover:text-white">Firebase Console → Authentication → Settings → Authorized domains</a> → กด <b>Add domain</b> → ใส่ host ด้านบน
+        </div>
+
         <!-- Compose box — admin only -->
         <div id="dispatch-compose" class="hidden space-y-2">
           <textarea id="dispatch-task" rows="3"
@@ -1550,8 +1556,30 @@ function applyAuthUI(user) {
   }
 }
 
+// Best-effort preflight: detect when this host isn't authorized in Firebase Auth
+// and surface the exact remediation on-page instead of failing silently on click.
+async function preflightAuthDomain() {
+  try {
+    const host = location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') return;   // always allowed
+    const warn = document.getElementById('dispatch-domain-warn');
+    if (!warn) return;
+    const r = await fetch('https://www.googleapis.com/identitytoolkit/v3/relyingparty/getProjectConfig?key=' + firebaseConfig.apiKey);
+    if (!r.ok) return;
+    const domains = (await r.json()).authorizedDomains || [];
+    if (!domains.includes(host)) {
+      const hostEl = document.getElementById('dispatch-domain-host');
+      if (hostEl) hostEl.textContent = host;
+      warn.classList.remove('hidden');
+    } else {
+      warn.classList.add('hidden');
+    }
+  } catch (_) { /* preflight is best-effort — never break the page */ }
+}
+
 function initAuth() {
   onAuthStateChanged(auth, applyAuthUI);
+  preflightAuthDomain();
   // Complete a redirect-based sign-in round-trip (fallback path / popup-blocked browsers).
   getRedirectResult(auth)
     .then((res) => { if (res?.user) window.showToast?.('เข้าสู่ระบบแล้ว: ' + res.user.email, 'success'); })
