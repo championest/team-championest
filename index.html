@@ -1457,8 +1457,8 @@ const DEFAULT_MEMBERS = [
 async function init() {
   initAuth();   // resolve admin sign-in state early (cheap — just an auth listener)
   // Critical for the default Team view (System Map): dispatch + auto-agents:
-  loadDispatch();   // defines window.loadAgents + wires claude-tasks live feed
-  loadAgents();     // ⚙️ Auto Agents grid + 🧠 Claude hats
+  window.loadDispatch();   // defines window.loadAgents + wires claude-tasks live feed
+  window.loadAgents();     // ⚙️ Auto Agents grid + 🧠 Claude hats
   loadStatsBar();
   loadActivityFeed();
   // Off-screen tabs → defer to idle time: faster first paint, fewer simultaneous
