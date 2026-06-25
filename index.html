@@ -1589,8 +1589,15 @@ window.loadDojo = function() {
     const badge = document.getElementById('dojo-badge');
     if (pending > 0) { badge.textContent = pending; badge.classList.remove('hidden'); } else badge.classList.add('hidden');
     if (_dojoDocs[0]?.created_at) document.getElementById('dojo-updated').textContent = 'updated ' + _dojoAgo(_dojoDocs[0].created_at) + ' ago';
-    renderDojo();
+    renderDojoSafe();
   }, () => { document.getElementById('dojo-grid').innerHTML = '<div class="text-gray-600 text-sm col-span-2">ยังไม่มีข้อมูล (collection poster-dojo ว่าง — รอ Mac mini ส่งโพสมา)</div>'; });
+
+  // re-render ที่ถูกเลื่อนไว้ (เพราะกำลังพิมพ์) ให้วิ่งตอน focus ออกจาก textarea
+  const grid0 = document.getElementById('dojo-grid');
+  if (grid0 && !grid0._blurBound) {
+    grid0._blurBound = true;
+    grid0.addEventListener('focusout', () => { if (_dojoPendingRender) setTimeout(() => { if (!_dojoTyping()) renderDojo(); }, 150); });
+  }
 
   // rubric counters
   onSnapshot(collection(db, 'poster-rubric'), snap => {
