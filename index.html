@@ -1673,6 +1673,7 @@ window.dojoSubmit = async function(id, status) {
   const asRule = document.getElementById('dr-'+id)?.checked;
   const sev = document.getElementById('ds-'+id)?.value || '🟡';
   const p = _dojoDocs.find(x => x.id === id) || {};
+  delete _dojoDrafts[id];   // ส่งแล้ว ล้าง draft + ปล่อยให้ re-render ที่ค้างวิ่งได้
   try {
     await updateDoc(doc(db, 'poster-dojo', id), {
       status,
