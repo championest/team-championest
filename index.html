@@ -1613,6 +1613,7 @@ window.loadDojo = function() {
 };
 
 function renderDojo() {
+  _dojoPendingRender = false;
   const grid = document.getElementById('dojo-grid');
   if (!grid) return;
   let docs = _dojoDocs;
