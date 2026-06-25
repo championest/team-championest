@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Team Championest</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     * { font-family: 'Inter', sans-serif; }
@@ -484,6 +483,14 @@
     .rule-card::before {
       content: ''; position: absolute; left: 0; top: 0; bottom: 0;
       width: 3px; background: var(--rule-accent, #6366f1); border-radius: 3px 0 0 3px;
+    }
+    /* Respect reduced-motion: stop perpetual decorative animation on this always-open dashboard */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+      }
     }
   </style>
 </head>
@@ -1103,22 +1110,6 @@
 </style>
 
 <script>
-  mermaid.initialize({
-    startOnLoad: false,
-    theme: 'dark',
-    flowchart: { curve: 'basis', padding: 20 },
-    themeVariables: {
-      darkMode: true,
-      background: '#111827',
-      primaryColor: '#1e3a5f',
-      primaryTextColor: '#fff',
-      lineColor: '#6366f1',
-      edgeLabelBackground: '#111827',
-      fontSize: '13px'
-    }
-  });
-
-  let mermaidRendered = false;
   let skillsRendered = false;
 
   const SKILLS = [
@@ -1221,6 +1212,8 @@
     pink:   { bg: 'bg-pink-900/20',   border: 'border-pink-700/40',   text: 'text-pink-300',   badge: 'bg-pink-900/50 text-pink-300' },
     emerald:{ bg: 'bg-emerald-900/20',border: 'border-emerald-700/40',text: 'text-emerald-300',badge: 'bg-emerald-900/50 text-emerald-300' },
     violet: { bg: 'bg-violet-900/20', border: 'border-violet-700/40', text: 'text-violet-300', badge: 'bg-violet-900/50 text-violet-300' },
+    sky:    { bg: 'bg-sky-900/20',    border: 'border-sky-700/40',    text: 'text-sky-300',    badge: 'bg-sky-900/50 text-sky-300' },
+    teal:   { bg: 'bg-teal-900/20',   border: 'border-teal-700/40',   text: 'text-teal-300',   badge: 'bg-teal-900/50 text-teal-300' },
   };
 
   let skillUsageCounts = {};
@@ -1274,10 +1267,6 @@
     document.getElementById('add-btn').style.display = tab === 'team' ? '' : 'none';
     document.getElementById('sync-btn').style.display = tab === 'team' ? '' : 'none';
 
-    if (tab === 'workflow' && !mermaidRendered) {
-      mermaid.run({ nodes: [document.getElementById('workflow-diagram')] });
-      mermaidRendered = true;
-    }
     if (tab === 'skills' && !skillsRendered) renderSkills();   // render once, not on every open
   }
 </script>
@@ -1319,10 +1308,13 @@ let currentUser = null;   // set by onAuthStateChanged
 // ─── PIN ────────────────────────────────────────────────
 const CORRECT_PIN = "7777";
 
+let _subtitleAnimated = false;
 function startTypingAnimation() {
   const el = document.getElementById('subtitle-text');
   if (!el) return;
   const text = 'AI team · always ready';
+  if (_subtitleAnimated) return;   // already running/done — never interrupt the in-flight typewriter
+  _subtitleAnimated = true;
   el.textContent = '';
   el.classList.add('typing-cursor');
   let i = 0;
@@ -1394,6 +1386,7 @@ const colorMap = {
   amber:   { bg: 'bg-amber-900/40',   border: 'border-amber-700/50',   text: 'text-amber-400',   dot: 'bg-amber-500' },
   sky:     { bg: 'bg-sky-900/40',     border: 'border-sky-700/50',     text: 'text-sky-400',     dot: 'bg-sky-500' },
   pink:    { bg: 'bg-pink-900/40',    border: 'border-pink-700/50',    text: 'text-pink-400',    dot: 'bg-pink-500' },
+  teal:    { bg: 'bg-teal-900/40',    border: 'border-teal-700/50',    text: 'text-teal-400',    dot: 'bg-teal-500' },
 };
 
 // ─── Default team ────────────────────────────────────────
@@ -1756,18 +1749,24 @@ window.syncDefaults = async function() {
 }
 
 // ─── Team ────────────────────────────────────────────────
+function renderTeamGrid(members) {
+  const grid = document.getElementById('team-grid');
+  if (!grid) return;
+  grid.innerHTML = members.map(m => memberCard(m.id, m)).join('');
+  // Stagger entrance
+  grid.querySelectorAll('.member-card').forEach((el, i) => {
+    el.classList.add('card-enter');
+    el.style.animationDelay = `${i * 45}ms`;
+  });
+}
 function loadTeam() {
+  // render defaults immediately so the team is never empty, then live-override only when Firestore has real data
+  renderTeamGrid(DEFAULT_MEMBERS);
   const q = query(collection(db, 'team-config'), orderBy('order'));
   onSnapshot(q, snap => {
-    const grid = document.getElementById('team-grid');
-    if (snap.empty) { grid.innerHTML = '<p class="text-gray-600 text-sm">No members.</p>'; return; }
-    grid.innerHTML = snap.docs.map(d => memberCard(d.id, d.data())).join('');
-    // Stagger entrance
-    grid.querySelectorAll('.member-card').forEach((el, i) => {
-      el.classList.add('card-enter');
-      el.style.animationDelay = `${i * 45}ms`;
-    });
-  });
+    if (snap.empty) return;   // keep the already-rendered defaults; don't re-render (would reset entrance anim)
+    renderTeamGrid(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  }, err => console.warn('team-config:', err?.code || err));
 }
 
 const avatarGradients = {
@@ -1778,6 +1777,7 @@ const avatarGradients = {
   amber:   'from-amber-400 to-orange-600',
   sky:     'from-sky-400 to-cyan-600',
   pink:    'from-pink-400 to-rose-600',
+  teal:    'from-teal-400 to-cyan-600',
 };
 
 const PIXEL_AVATARS = {
@@ -2470,14 +2470,13 @@ const statusBadge = {
   'DONE':        { bg: '#1e293b', text: '#94a3b8', label: '✓ DONE' },
 };
 
-async function loadProjects() {
-  // Always upsert default projects so new ones appear without manual sync
-  for (const p of DEFAULT_PROJECTS) {
-    await setDoc(doc(db, 'team-projects', p.id), p, { merge: false });
-  }
+function loadProjects() {
+  // render defaults immediately (never stuck on "Loading…"), then live-override from Firestore.
+  // NOTE: no write-on-load — projects are seeded only via the manual Sync button (syncProjects).
+  renderProjects(DEFAULT_PROJECTS);
   onSnapshot(query(collection(db, 'team-projects'), orderBy('order')), s => {
     if (!s.empty) renderProjects(s.docs.map(d => ({ id: d.id, ...d.data() })));
-  });
+  }, err => console.warn('team-projects:', err?.code || err));
 }
 
 window.syncProjects = async function() {
@@ -2681,8 +2680,11 @@ window.loadRanking = async function() {
           </div>`).join('');
 
   } catch(e) {
-    console.error(e);
-    rankEl.innerHTML = '<div class="text-red-500 text-sm">Error: ' + e.message + '</div>';
+    console.warn('ranking:', e?.code || e?.message || e);
+    const perm = /permission|insufficient/i.test(e?.message || '');
+    rankEl.innerHTML = '<div class="text-gray-500 text-sm py-2">' +
+      (perm ? '🔒 ดูคะแนนทีมไม่ได้ตอนนี้ (สิทธิ์ Firestore) — ระบบให้คะแนนยังใช้ได้ปกติ'
+            : '⚠️ โหลดอันดับไม่ได้ ลองกด Refresh อีกครั้ง') + '</div>';
   }
 };
 
