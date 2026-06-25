@@ -1419,7 +1419,7 @@ if (localStorage.getItem('champ-auth') === '1') {
   app.classList.add('entering');
   setTimeout(() => app.classList.remove('entering'), 600);
   startTypingAnimation();
-  init();
+  setTimeout(init, 0);   // defer to after module eval so window.loadDispatch/loadAgents are defined
 }
 
 // ─── Color map ──────────────────────────────────────────
