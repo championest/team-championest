@@ -1514,6 +1514,14 @@ window.loadOps = function loadOps() {
       <div class="flex items-end justify-between gap-1 pt-2 border-t border-gray-800">${spark}</div>`;
   });
 
+}
+
+// ── Web Dispatch live feed — runs on init (default Team tab), not lazy ──
+let _dispatchLoaded = false;
+window.loadDispatch = function loadDispatch() {
+  if (_dispatchLoaded) return;
+  _dispatchLoaded = true;
+  const ago = ts => { if(!ts) return '—'; const d = ts.toDate ? ts.toDate() : new Date(ts); const s = Math.floor((Date.now()-d)/1000); if(s<60) return s+'s ago'; if(s<3600) return Math.floor(s/60)+'m ago'; if(s<86400) return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; };
   // Dispatch live feed — claude-tasks recent (chat-like, real-time)
   const tq = query(collection(db, 'claude-tasks'), orderBy('created_at', 'desc'), limit(15));
   onSnapshot(tq, snap => {
