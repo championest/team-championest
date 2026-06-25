@@ -1651,7 +1651,7 @@ function renderDojo() {
       ${fails ? `<div class="space-y-1 border-t border-gray-800/60 pt-2">${fails}</div>` : ''}
       ${champ}
       ${done ? '' : `<div class="space-y-2 border-t border-gray-800/60 pt-2">
-        <textarea id="dc-${id}" rows="2" placeholder="คอมเมนต์ของพี่ (จะกลายเป็นกฎใน RUBRIC ถ้าติ๊กข้างล่าง)" class="w-full bg-gray-800/70 border border-gray-700/50 rounded-lg px-2.5 py-2 text-xs text-gray-200 placeholder-gray-600 resize-none focus:outline-none focus:border-indigo-500/60"></textarea>
+        <textarea id="dc-${id}" rows="2" oninput="_dojoDrafts['${id}']=this.value" placeholder="คอมเมนต์ของพี่ (จะกลายเป็นกฎใน RUBRIC ถ้าติ๊กข้างล่าง)" class="w-full bg-gray-800/70 border border-gray-700/50 rounded-lg px-2.5 py-2 text-xs text-gray-200 placeholder-gray-600 resize-none focus:outline-none focus:border-indigo-500/60">${escHtml(_dojoDrafts[id]||'')}</textarea>
         <label class="flex items-center gap-2 text-[11px] text-gray-400 cursor-pointer">
           <input type="checkbox" id="dr-${id}" class="accent-indigo-500"> เพิ่มคอมเมนต์นี้เป็นกฎใน RUBRIC
           <select id="ds-${id}" class="ml-auto bg-gray-800 border border-gray-700/50 rounded px-1 py-0.5 text-[11px] text-gray-300">
