@@ -320,15 +320,17 @@ const isToday = ts => { if(!ts) return false; const d = ts.toDate?ts.toDate():ne
 // fallback emoji + colour per member id / name keyword
 const COLOR = { indigo:'#7c83ff', violet:'#b18bff', emerald:'#5fd99a', rose:'#ff7a8a',
   amber:'#ffce5c', sky:'#6fc7e8', pink:'#ff9ec4', teal:'#54d6c4' };
-const EMOJI = { ace:'⭐', kai:'💻', nova:'🎨', sam:'🔍', jade:'🛡️', iris:'🧠', pixel:'📐',
-  bolt:'🔧', rena:'💡', max:'📊', sage:'📚', vera:'📋', flux:'📈', lens:'🎬', nong:'🎓' };
+const EMOJI = { ace:'⭐', cody:'💻', coco:'🎨', scout:'🔍', spoty:'🛡️', memo:'🧠', arty:'📐',
+  bolt:'🔧', amy:'💡', pi:'📊', book:'📚', vera:'📋', lens:'🎬', nong:'🎓', spike:'🐕' };
 function emojiFor(m){
   if(m.emoji) return m.emoji;
   if(EMOJI[m.id]) return EMOJI[m.id];
   const n=(m.name||'').toLowerCase();
   if(n.includes('ace'))return'⭐'; if(n.includes('cody'))return'💻'; if(n.includes('coco'))return'🎨';
   if(n.includes('scout'))return'🔍'; if(n.includes('spoty'))return'🛡️'; if(n.includes('memo'))return'🧠';
-  if(n.includes('arty'))return'📐'; if(n.includes('amy'))return'💡'; if(n.includes('pi'))return'📊';
+  if(n.includes('arty'))return'📐'; if(n.includes('bolt'))return'🔧'; if(n.includes('amy'))return'💡';
+  if(n.includes('book'))return'📚'; if(n.includes('vera'))return'📋'; if(n.includes('lens'))return'🎬';
+  if(n.includes('nong'))return'🎓'; if(n.includes('spike'))return'🐕'; if(n.includes('pi'))return'📊';
   return '🙂';
 }
 function colorFor(m){ return COLOR[m.color] || '#7c83ff'; }
@@ -358,15 +360,18 @@ function classifyMember(taskText, ids){
   const has = (...ws)=>ws.some(w=>t.includes(w));
   const pick = id => ids.includes(id) ? id : null;
   let r=null;
-  if(has('deploy','build','code','โค้ด','debug','bug','fix','refactor','feature','สร้างไฟล์','html','script')) r=pick('kai');
-  else if(has('content','post','โพสต์','copy','script','caption','social','tiktok','คอนเทนต์')) r=pick('nova');
-  else if(has('research','วิจัย','หาข้อมูล','compare','market')) r=pick('sam');
-  else if(has('review','qa','test','ทดสอบ','security','audit','ตรวจ')) r=pick('jade');
-  else if(has('design','ui','ux','wireframe','ดีไซน์','layout')) r=pick('pixel');
+  if(has('deploy','build','code','โค้ด','debug','bug','fix','refactor','feature','สร้างไฟล์','html','script')) r=pick('cody');
+  else if(has('content','post','โพสต์','copy','caption','social','tiktok','คอนเทนต์','voiceover')) r=pick('coco');
+  else if(has('research','วิจัย','หาข้อมูล','compare','market')) r=pick('scout');
+  else if(has('review','qa','test','ทดสอบ','security','audit','ตรวจ')) r=pick('spoty');
+  else if(has('design','ui','ux','wireframe','ดีไซน์','layout')) r=pick('arty');
   else if(has('image','รูป','thumbnail','visual','video','วิดีโอ')) r=pick('lens');
-  else if(has('math','physics','problem set','ฟิสิกส์','คณิต')) r=pick('max');
-  else if(has('memory','second brain','summary','สรุป','decision')) r=pick('iris');
-  else if(has('form','document','เอกสาร','deadline','admin')) r=pick('vera');
+  else if(has('math','physics','problem set','ฟิสิกส์','คณิต','formula')) r=pick('pi');
+  else if(has('memory','second brain','summary','สรุป','decision','journal')) r=pick('memo');
+  else if(has('form','document','เอกสาร','deadline','admin','correspondence')) r=pick('vera');
+  else if(has('persona','buyer','customer','voc','demand','ลูกค้า')) r=pick('amy');
+  else if(has('tool','install','mcp','automation','pipeline','เครื่องมือ')) r=pick('bolt');
+  else if(has('curriculum','tpt','worksheet','teacher','educational','สื่อการสอน')) r=pick('book');
   return r;
 }
 
