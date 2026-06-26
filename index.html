@@ -1629,14 +1629,16 @@ window.loadDispatch = function loadDispatch() {
   window.loadAgents = function loadAgents() {
     renderHats();
     renderAgents();
+    // per-service running + last_exit (newest fresh heartbeat wins per label)
     onSnapshot(collection(db, 'machine-status'), snap => {
       const map = {};
       snap.docs.forEach(d => {
         const m = d.data();
         const fresh = m.updated_at && (Date.now() - (m.updated_at.toDate ? m.updated_at.toDate() : new Date(m.updated_at))) < 5*60000;
         (m.services || []).forEach(s => {
-          const cur = map[s.label] || { running:false, fresh:false };
+          const cur = map[s.label] || { running:false, fresh:false, last_exit:null };
           if (s.running && fresh) { cur.running = true; cur.fresh = true; }
+          if (s.last_exit != null) cur.last_exit = s.last_exit;
           map[s.label] = cur;
         });
       });
@@ -1644,11 +1646,39 @@ window.loadDispatch = function loadDispatch() {
       renderAgents();
     }, err => console.warn('machine-status:', err?.code || err));
 
+    // executor liveness — its own heartbeat doc
+    onSnapshot(doc(db, 'claude-executor', 'heartbeat'), snap => {
+      const ls = snap.data()?.last_seen;
+      _execAlive = !!(ls && (Date.now() - (ls.toDate ? ls.toDate() : new Date(ls))) < 3*60000);
+      renderAgents();
+    }, err => console.warn('executor heartbeat:', err?.code || err));
+
+    // live queue: running task (+age), pending depth, stuck detection
+    const ctq = query(collection(db, 'claude-tasks'), orderBy('created_at', 'desc'), limit(25));
+    onSnapshot(ctq, snap => {
+      let pending = 0; const running = [];
+      snap.docs.forEach(d => {
+        const t = d.data();
+        if (t.status === 'pending') pending++;
+        else if (t.status === 'running') {
+          const st = t.started_at?.toMillis?.() ?? t.created_at?.toMillis?.() ?? Date.now();
+          running.push({ id: d.id, task: t.task || '(no task)', ageMs: Date.now() - st });
+        }
+      });
+      running.sort((a, b) => b.ageMs - a.ageMs);
+      _pendingCount = pending;
+      _runningTask = running[0] || null;
+      _stuckTask = running.find(r => r.ageMs > STUCK_MS) || null;
+      renderAgents();
+    }, err => console.warn('claude-tasks signals:', err?.code || err));
+
     const dq = query(collection(db, 'poster-dojo'), orderBy('created_at', 'desc'), limit(1));
     onSnapshot(dq, snap => {
       const d = snap.docs[0]?.data();
       const ts = d?.created_at;
-      _agentDojoFresh = !!(ts && (Date.now() - (ts.toDate ? ts.toDate() : new Date(ts))) < 6*3600000);
+      const ms = ts ? (Date.now() - (ts.toDate ? ts.toDate() : new Date(ts))) : Infinity;
+      _agentDojoFresh = ms < 6*3600000;
+      _agentDojoAgo = isFinite(ms) ? fmtAge(ms) + ' ก่อน' : '—';
       renderAgents();
     }, err => console.warn('poster-dojo:', err?.code || err));
   };
