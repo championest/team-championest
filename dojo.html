@@ -149,7 +149,8 @@ function render(){
   if (FILTER !== 'all') docs = docs.filter(p => (p.status||'pending')===FILTER);
   if (!docs.length) { grid.innerHTML = `<div class="text-gray-600 text-sm py-8 text-center">ไม่มีโพสในหมวด "${FILTER}" 🎉</div>`; return; }
   const vC = v => ({PASS:'emerald',REVISE:'amber',REJECT:'rose'}[v]||'gray');
-  const stC = { pending:'amber', approved:'emerald', revise:'sky' };
+  const stC = { pending:'amber', approved:'emerald', revise:'sky', reworking:'violet' };
+  const stLabel = (st,p) => st==='reworking' ? `🔧 กำลังแก้${p.rework_round?' รอบ '+p.rework_round:''}` : st;
 
   grid.innerHTML = docs.map(p => {
     const id=p.id, vc=vC(p.verdict), st=p.status||'pending', done=st!=='pending';
@@ -163,7 +164,7 @@ function render(){
           <div class="min-w-0"><div class="text-sm font-semibold text-gray-100 truncate">${esc(p.name||'untitled')}</div>
           <div class="text-[10px] text-gray-500">${esc([p.game,p.variant,p.created_at?ago(p.created_at)+' ago':''].filter(Boolean).join(' · '))}</div></div>
           <div class="text-right shrink-0"><span class="text-[10px] px-1.5 py-0.5 rounded bg-${vc}-900/50 text-${vc}-300">${esc(p.verdict||'?')}</span>
-          <span class="text-[10px] px-1.5 py-0.5 rounded bg-${stC[st]}-900/40 text-${stC[st]}-300 ml-1">${st}</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-${stC[st]||'gray'}-900/40 text-${stC[st]||'gray'}-300 ml-1${st==='reworking'?' animate-pulse':''}">${esc(stLabel(st,p))}</span>
           <div class="text-xs text-gray-400">${p.grade??'-'}/100</div></div>
         </div>
         ${fails?`<div class="space-y-1 border-t border-gray-800/60 pt-2">${fails}</div>`:''}
@@ -185,13 +186,36 @@ window.submit = async (id, status) => {
   const asRule=document.getElementById('dr-'+id)?.checked;
   const sev=document.getElementById('ds-'+id)?.value||'🟡';
   const p=DOCS.find(x=>x.id===id)||{};
+  // "ให้แก้" = rework loop: ต้องมีคอมเมนต์บอก agent ว่าจะแก้อะไร
+  if (status==='revise' && !comment) { toast('พิมพ์บอกก่อนว่าให้แก้อะไร แล้วค่อยกดให้แก้ 🔁', '#fbbf24'); document.getElementById('dc-'+id)?.focus(); return; }
   delete drafts[id];
   try {
-    await updateDoc(doc(db,'poster-dojo',id), { status, champ_comment:comment||null, reviewed_by:ME, reviewed_at:serverTimestamp() });
+    if (status==='revise') {
+      // dispatch a rework task the Mac-mini executor will pick up → gen ใหม่ทับใบเดิม → กลับมา pending
+      const round=(p.rework_round||0)+1;
+      const task=[
+        'Rework practice poster ที่ Champ กดให้แก้ ตาม ~/Projects/poster-dojo/PRACTICE.md (section REWORK).',
+        `Poster: ${p.name||id}  (ไฟล์เดิม: practice/${p.name||id}.html)  ·  รอบแก้ที่ ${round}`,
+        `คอมเมนต์ Champ (สิ่งที่ต้องแก้): "${comment}"`,
+        'ทำ: อ่าน practice/<name>.html + RUBRIC.md → แก้เฉพาะจุดที่ Champ บอก (อย่ารื้อทั้งใบ ถ้าจุดอื่นดีอยู่แล้ว) → bash render.sh → self-review เทียบ RUBRIC → push ทับใบเดิม (FIREBASE_KEY_PATH=~/Projects/up-level-leaderboard/service-account.json node firestore-sync.mjs push practice/<name>.png, ใช้ node LTS) → จากนั้น set doc poster-dojo/<name> field status="pending" (merge) เพื่อให้กลับมาให้ Champ ตรวจรอบใหม่. ทำ autonomous.',
+      ].join('\n');
+      await addDoc(collection(db,'claude-tasks'), {
+        task, project:'poster-dojo', status:'pending', source:'rework',
+        posterId:id, posterName:p.name||id, champ_comment:comment, rework_round:round,
+        created_by:ME, created_at:serverTimestamp(),
+      });
+      // mark the poster "reworking" so it leaves the review queue until the new render lands
+      await updateDoc(doc(db,'poster-dojo',id), {
+        status:'reworking', champ_comment:comment, reviewed_by:ME, reviewed_at:serverTimestamp(),
+        rework_round:round, rework_dispatched_at:serverTimestamp(),
+      });
+    } else {
+      await updateDoc(doc(db,'poster-dojo',id), { status, champ_comment:comment||null, reviewed_by:ME, reviewed_at:serverTimestamp() });
+    }
     if (asRule && comment) {
       await addDoc(collection(db,'poster-rubric'), { rule:comment, severity:sev, fromPoster:p.name||id, game:p.game||null, applied:false, by:ME, created_at:serverTimestamp() });
-      toast('เพิ่มกฎเข้า RUBRIC แล้ว ✓');
-    } else toast(status==='approved'?'ผ่านแล้ว ✅':'ส่งให้แก้ 🔁');
+      toast('เพิ่มกฎเข้า RUBRIC + '+(status==='revise'?'ส่งให้แก้แล้ว 🔧':'บันทึกแล้ว ✓'));
+    } else toast(status==='approved'?'ผ่านแล้ว ✅':'ส่งให้ agent แก้แล้ว 🔧 — เดี๋ยวกลับมาให้ตรวจใหม่');
   } catch(e){ toast('error: '+(e.code||e.message), '#f87171'); }
 };
 </script>
