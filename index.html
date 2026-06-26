@@ -1462,63 +1462,152 @@ window.loadDispatch = function loadDispatch() {
     console.warn('dispatch feed error:', err?.code || err);
   });
 
-  // ── Auto Agents grid (machine-status services + poster-dojo freshness) ──
+  // ── Live Agents grid — real automation on the mini as "characters" ──
+  // Live signals come from existing collections (no new daemon):
+  //   machine-status   → per-service running + last_exit (crash)
+  //   claude-executor/heartbeat → executor alive?
+  //   claude-tasks     → current running task + queue depth + stuck detection
+  //   poster-dojo      → last practice-loop freshness
+  // Control buttons (admin only) route through claude-tasks: the executor
+  // (full-autonomy Claude) picks them up and kickstarts / clears as asked.
+  const STUCK_MS = 25 * 60_000;   // a running task older than this = ค้าง
   const AGENT_CATALOG = [
     { key:'executor', svc:'com.championest.claude-executor', icon:'🤖', name:'Executor', where:'Mac mini', persistent:true,
-      desc:'รับงานจาก Web Dispatch → รัน Claude Code headless แล้วรายงานกลับ', sched:'poll claude-tasks ตลอด' },
+      desc:'รับงานจาก Web Dispatch → รัน Claude Code headless แล้วรายงานกลับ', sched:'poll claude-tasks ตลอด',
+      proj:'general', nudge:'ตรวจสถานะ remote executor: ดูว่ามีงานค้างใน claude-tasks (status=running นานผิดปกติ) ไหม ถ้ามีให้เคลียร์ แล้วรายงานสั้นๆ ว่า queue ตอนนี้เป็นยังไง' },
     { key:'dojo', svc:null, icon:'🥋', name:'Poster Dojo', where:'Mac mini', persistent:false, link:'./dojo.html',
-      desc:'render → review (VLM) → queue → learn · RUBRIC โตจากคอมเมนต์', sched:'ทุก ~3 ชม.' },
+      desc:'render → review (VLM) → queue → learn · RUBRIC โตจากคอมเมนต์', sched:'ทุก ~3 ชม.',
+      proj:'poster', nudge:'รัน Poster Dojo practice loop 1 รอบเดี๋ยวนี้ แล้วรายงานสั้นๆ ว่า gen โพสอะไรไป + reviewer ให้คะแนนเท่าไร' },
     { key:'pipeline', svc:'com.uplevel.priceindex', icon:'💱', name:'Card Pipeline', where:'Mac mini', persistent:false,
-      desc:'เฝ้า set ใหม่ (Lorcast/PTCG) → refresh ราคา+catalog → trigger Dojo', sched:'daily 07:00' },
+      desc:'เฝ้า set ใหม่ (Lorcast/PTCG) → refresh ราคา+catalog → trigger Dojo', sched:'daily 07:00',
+      proj:'general', nudge:'kickstart card pipeline เดี๋ยวนี้: รัน `launchctl kickstart -k gui/$(id -u)/com.uplevel.priceindex` แล้วรายงานว่ามี set ใหม่ไหม + ราคาอัปเดตกี่ใบ' },
+    { key:'forge', svc:'com.championest.forge', icon:'🔨', name:'Forge', where:'Mac mini', persistent:true,
+      desc:'24/7 bug→fix: intake → triage → fix ใน worktree (PR) → approve → deploy', sched:'24/7 loop',
+      proj:'forge', nudge:'ตรวจสถานะ Forge: daemon ทำงานปกติไหม มี bug/ticket ค้างใน queue ไหม ถ้า stuck ให้หาเหตุ แล้วรายงานสั้นๆ' },
     { key:'heartbeat', svc:'com.championest.ops-heartbeat', icon:'💓', name:'Ops Heartbeat', where:'ทุกเครื่อง', persistent:true,
-      desc:'ส่งสถานะเครื่อง RAM/disk/uptime → Ops tab', sched:'ทุก ~1 นาที' },
+      desc:'ส่งสถานะเครื่อง RAM/disk/uptime → Ops tab', sched:'ทุก ~2 นาที',
+      proj:'general', nudge:'kickstart com.championest.ops-heartbeat เดี๋ยวนี้ (`launchctl kickstart -k gui/$(id -u)/com.championest.ops-heartbeat`) แล้วยืนยันว่า machine-status อัปเดต' },
     { key:'tokens', svc:'com.championest.ops-tokens', icon:'💰', name:'Ops Tokens', where:'Mac mini', persistent:false,
-      desc:'รวมค่า token รายวัน → Ops tab', sched:'daily' },
-    { key:'sync', svc:null, icon:'🔄', name:'Claude Sync', where:'hook', persistent:false, alwaysOn:true,
-      desc:'ทุก turn เขียน journal + work-state → ต่องานข้ามเครื่อง', sched:'per-turn' },
+      desc:'รวมค่า token รายวัน → Ops tab', sched:'daily',
+      proj:'general', nudge:'kickstart com.championest.ops-tokens เดี๋ยวนี้ แล้วรายงานยอด token/ค่าใช้จ่ายวันนี้' },
+    { key:'sync', svc:'com.championest.brain-sync-ssh', icon:'🔄', name:'Brain Sync', where:'Air↔mini', persistent:true,
+      desc:'sync ~/.claude + memory + work-state ข้ามเครื่อง (rsync over SSH)', sched:'ทุก ~2 นาที',
+      proj:'general', nudge:'kickstart com.championest.brain-sync-ssh เดี๋ยวนี้ แล้วยืนยันว่า sync สำเร็จ (ไม่มี error)' },
   ];
-  let _agentSvc = {};        // label → { running, fresh }
-  let _agentDojoFresh = false;
+  let _agentSvc = {};        // label → { running, fresh, last_exit }
+  let _agentDojoFresh = false, _agentDojoAgo = '';
+  let _execAlive = false;    // claude-executor/heartbeat fresh?
+  let _runningTask = null;   // { id, task, ageMs } — oldest running claude-task
+  let _pendingCount = 0;
+  let _stuckTask = null;     // running task older than STUCK_MS
+
+  const fmtAge = ms => { const s = Math.floor(ms/1000); if (s<60) return s+'s'; if (s<3600) return Math.floor(s/60)+'m'; return Math.floor(s/3600)+'h'+Math.floor((s%3600)/60)+'m'; };
+  const aclip = (s, n) => { s = String(s||''); return s.length>n ? s.slice(0,n)+'…' : s; };
+
+  // → { kind, dot, badge, activity }   (activity = HTML line under the desc)
+  function agentState(a) {
+    if (a.key === 'executor') {
+      if (!_execAlive)
+        return { kind:'down', dot:'bg-rose-600', badge:'<span class="text-rose-400">○ ไม่ตอบ</span>',
+          activity:'<span class="text-rose-300/90">⚠️ executor เงียบ — heartbeat ขาด >3 นาที</span>' };
+      if (_stuckTask)
+        return { kind:'stuck', dot:'bg-rose-500 animate-pulse', badge:'<span class="text-rose-400">⚠️ ค้าง</span>',
+          activity:`<span class="text-rose-300/90">⚠️ งานค้าง ${fmtAge(_stuckTask.ageMs)}:</span> <span class="text-gray-300">${escHtml(aclip(_stuckTask.task,52))}</span>` };
+      if (_runningTask)
+        return { kind:'running', dot:'bg-emerald-500 animate-pulse', badge:'<span class="text-emerald-400">⚙️ ทำงาน</span>',
+          activity:`<span class="text-emerald-300/90">⚙️ ${fmtAge(_runningTask.ageMs)}:</span> <span class="text-gray-300">${escHtml(aclip(_runningTask.task,52))}</span>` };
+      return { kind:'idle', dot:'bg-emerald-500', badge:'<span class="text-emerald-400">● พร้อม</span>',
+        activity: _pendingCount ? `<span class="text-amber-300/90">📋 คิว ${_pendingCount} งาน · กำลังจะรัน</span>` : '<span class="text-gray-500">✓ ว่าง · พร้อมรับงาน</span>' };
+    }
+    if (a.key === 'dojo') {
+      return _agentDojoFresh
+        ? { kind:'running', dot:'bg-emerald-500', badge:'<span class="text-emerald-400">● สด</span>', activity:`<span class="text-gray-400">รอบล่าสุด ${_agentDojoAgo}</span>` }
+        : { kind:'sched', dot:'bg-sky-500', badge:'<span class="text-sky-400">◷ รอรอบ</span>', activity:'<span class="text-gray-500">ยังไม่มีรอบใหม่ใน 6 ชม. — กดกระตุ้นเพื่อรันเลย</span>' };
+    }
+    // launchd-service-backed agents
+    const s = _agentSvc[a.svc] || {};
+    const crashed = !s.running && s.last_exit != null && s.last_exit !== 0;
+    if (a.persistent) {
+      if (s.running && s.fresh) return { kind:'up', dot:'bg-emerald-500', badge:'<span class="text-emerald-400">● up</span>', activity:'<span class="text-gray-500">ทำงานต่อเนื่อง</span>' };
+      if (crashed) return { kind:'crash', dot:'bg-rose-500', badge:`<span class="text-rose-400">✖ crash ${s.last_exit}</span>`, activity:`<span class="text-rose-300/90">หยุดทำงาน (exit ${s.last_exit}) — กดแก้เพื่อ restart</span>` };
+      return { kind:'down', dot:'bg-gray-600', badge:'<span class="text-gray-500">○ down</span>', activity:'<span class="text-gray-500">ไม่โหลด/หยุด — กดแก้เพื่อ restart</span>' };
+    }
+    // scheduled (non-persistent)
+    if (s.running) return { kind:'running', dot:'bg-emerald-500 animate-pulse', badge:'<span class="text-emerald-400">⚙️ กำลังรัน</span>', activity:'<span class="text-gray-400">กำลังทำงานรอบนี้</span>' };
+    if (crashed) return { kind:'crash', dot:'bg-rose-500', badge:`<span class="text-rose-400">✖ exit ${s.last_exit}</span>`, activity:`<span class="text-rose-300/90">รอบล่าสุดล้มเหลว (exit ${s.last_exit})</span>` };
+    return { kind:'sched', dot:'bg-sky-500', badge:'<span class="text-sky-400">◷ scheduled</span>', activity:'<span class="text-gray-500">รอรอบถัดไป</span>' };
+  }
 
   function renderAgents() {
     const grid = document.getElementById('agents-grid');
     if (!grid) return;
+    const admin = isAdminEmail(currentUser?.email);
     grid.innerHTML = AGENT_CATALOG.map(a => {
-      let running = false, fresh = false;
-      if (a.svc) { const s = _agentSvc[a.svc]; running = !!s?.running; fresh = !!s?.fresh; }
-      if (a.key === 'dojo') { running = _agentDojoFresh; fresh = _agentDojoFresh; }
-      if (a.alwaysOn) { running = true; fresh = true; }
-      let dot, badge;
-      if (a.persistent) {
-        const up = running && fresh;
-        dot = up ? 'bg-emerald-500' : 'bg-gray-600';
-        badge = up ? '<span class="text-emerald-400">● up</span>' : '<span class="text-gray-500">○ down</span>';
-      } else if (a.alwaysOn) {
-        dot = 'bg-indigo-500';
-        badge = '<span class="text-indigo-300">● on</span>';
-      } else {
-        dot = running ? 'bg-emerald-500 animate-pulse' : 'bg-sky-500';
-        badge = running ? '<span class="text-emerald-400">● running</span>' : '<span class="text-sky-400">◷ scheduled</span>';
-      }
+      const st = agentState(a);
       const title = a.link
         ? `<a href="${a.link}" class="text-white font-semibold text-sm hover:text-amber-300 transition">${a.icon} ${a.name} ↗</a>`
         : `<span class="text-white font-semibold text-sm">${a.icon} ${a.name}</span>`;
+      // control buttons (admin only)
+      let ctrl = '';
+      if (admin) {
+        const btns = [];
+        if (a.key === 'executor' && _stuckTask)
+          btns.push(`<button onclick="clearStuck()" class="text-[10px] font-medium px-2 py-1 rounded-lg bg-rose-600/80 hover:bg-rose-500 text-white transition">🧹 เคลียร์ค้าง</button>`);
+        const fixLabel = (st.kind === 'crash' || st.kind === 'down') ? '🔧 แก้/restart' : '⚡ กระตุ้น';
+        btns.push(`<button onclick="dispatchControl('${a.key}')" class="text-[10px] font-medium px-2 py-1 rounded-lg bg-indigo-600/80 hover:bg-indigo-500 text-white transition">${fixLabel}</button>`);
+        ctrl = `<div class="flex items-center gap-1.5 pt-1.5">${btns.join('')}</div>`;
+      }
       return `<div class="bg-gray-900/60 border border-gray-800/60 rounded-2xl p-3.5 space-y-1.5">
         <div class="flex items-center justify-between gap-2">
           <div class="flex items-center gap-2 min-w-0">
-            <span class="w-2 h-2 rounded-full ${dot} flex-shrink-0"></span>
+            <span class="w-2 h-2 rounded-full ${st.dot} flex-shrink-0"></span>
             ${title}
           </div>
-          <span class="text-[10px] whitespace-nowrap">${badge}</span>
+          <span class="text-[10px] whitespace-nowrap">${st.badge}</span>
         </div>
-        <p class="text-[11px] text-gray-400 leading-snug">${a.desc}</p>
+        <p class="text-[11px] leading-snug min-h-[1.6em]">${st.activity}</p>
+        <p class="text-[10px] text-gray-500 leading-snug">${a.desc}</p>
         <div class="flex items-center gap-2 text-[10px] text-gray-600 pt-0.5">
           <span class="px-1.5 py-0.5 rounded bg-gray-800/80 text-gray-400">${a.where}</span>
           <span>${a.sched}</span>
         </div>
+        ${ctrl}
       </div>`;
     }).join('');
   }
+  window._renderAgents = renderAgents;   // let applyAuthUI re-render on sign-in/out
+
+  // ── Control: nudge / fix (write a claude-task the executor picks up) ──
+  window.dispatchControl = async function(key) {
+    if (!isAdminEmail(currentUser?.email)) { window.showToast?.('ต้อง sign in ด้วยอีเมล admin ก่อนสั่งงาน', 'warning'); return; }
+    const a = AGENT_CATALOG.find(x => x.key === key);
+    if (!a) return;
+    try {
+      await addDoc(collection(db, 'claude-tasks'), {
+        task: a.nudge, project: a.proj || 'general', status: 'pending',
+        source: 'web-control', control_target: key,
+        created_by: currentUser.email, created_at: serverTimestamp(),
+      });
+      window.showToast?.('สั่ง ' + a.name + ' แล้ว — ดูผลใน Live Feed ด้านบน', 'success');
+    } catch (e) {
+      window.showToast?.('ส่งไม่สำเร็จ: ' + (e?.code === 'permission-denied' ? 'rules ไม่อนุญาต' : (e?.code || 'error')), 'error');
+    }
+  };
+  // ── Control: clear a stuck running task (mark failed so queue moves on) ──
+  window.clearStuck = async function() {
+    if (!isAdminEmail(currentUser?.email)) { window.showToast?.('ต้อง sign in ด้วยอีเมล admin ก่อน', 'warning'); return; }
+    if (!_stuckTask) { window.showToast?.('ไม่มีงานค้างตอนนี้', 'info'); return; }
+    try {
+      await updateDoc(doc(db, 'claude-tasks', _stuckTask.id), {
+        status: 'failed',
+        result: '(เคลียร์โดย admin จาก dashboard — งานค้างเกิน ' + Math.round(STUCK_MS/60000) + ' นาที)',
+        finished_at: serverTimestamp(), notified: true,
+      });
+      window.showToast?.('เคลียร์งานค้างแล้ว — queue เดินต่อได้', 'success');
+    } catch (e) {
+      window.showToast?.('เคลียร์ไม่สำเร็จ: ' + (e?.code || 'error'), 'error');
+    }
+  };
 
   function renderHats() {
     const grid = document.getElementById('hats-grid');
