@@ -1643,15 +1643,10 @@ window.loadDispatch = function loadDispatch() {
         });
       });
       _agentSvc = map;
+      // executor liveness derived from its launchd service (fresh heartbeat)
+      _execAlive = !!map['com.championest.claude-executor']?.running;
       renderAgents();
     }, err => console.warn('machine-status:', err?.code || err));
-
-    // executor liveness — its own heartbeat doc
-    onSnapshot(doc(db, 'claude-executor', 'heartbeat'), snap => {
-      const ls = snap.data()?.last_seen;
-      _execAlive = !!(ls && (Date.now() - (ls.toDate ? ls.toDate() : new Date(ls))) < 3*60000);
-      renderAgents();
-    }, err => console.warn('executor heartbeat:', err?.code || err));
 
     // live queue: running task (+age), pending depth, stuck detection
     const ctq = query(collection(db, 'claude-tasks'), orderBy('created_at', 'desc'), limit(25));
