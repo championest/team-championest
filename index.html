@@ -718,131 +718,60 @@
   <!-- ── WORKFLOW TAB ──────────────────────────────────── -->
   <div id="tab-workflow" class="hidden space-y-5">
 
-    <!-- Flow Diagram -->
+    <!-- How work flows now (real system) -->
     <div class="relative bg-gray-900/80 border border-gray-800/60 rounded-2xl overflow-hidden" style="box-shadow: 0 0 40px rgba(99,102,241,0.06), 0 4px 24px rgba(0,0,0,0.3)">
-      <!-- Top glow line -->
       <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.5),rgba(139,92,246,0.5),transparent)"></div>
-      <!-- Header -->
-      <div class="flex items-center justify-between px-5 pt-4 pb-2">
-        <div>
-          <div class="flex items-center gap-2">
-            <div class="w-6 h-6 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
-            </div>
-            <h2 class="text-sm font-semibold text-white">Team Flow</h2>
+      <div class="px-5 pt-4 pb-2">
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
           </div>
-          <p class="text-xs text-gray-500 mt-0.5 ml-8">How work moves through Team Championest</p>
+          <h2 class="text-sm font-semibold text-white">งานเดินยังไง</h2>
         </div>
-        <button onclick="openSuggestion()" class="flow-suggest-btn flex items-center gap-1.5 text-indigo-300 text-xs font-medium px-3 py-1.5 rounded-lg">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Suggest
-        </button>
+        <p class="text-xs text-gray-500 mt-0.5 ml-8">Claude เครื่องเดียวสวมหมวกตามงาน — Auto Agents รันวนอยู่เบื้องหลัง</p>
       </div>
-      <!-- Pipeline Cards -->
       <div class="px-3 pb-4 space-y-4">
 
-        <!-- Dev & Build Pipeline -->
+        <!-- Dispatch flow -->
         <div>
-          <div class="pipeline-label text-indigo-400">Dev &amp; Build</div>
+          <div class="pipeline-label text-indigo-400">สั่งงาน (จาก Champ)</div>
           <div class="flex items-center gap-2 pipeline-scroll overflow-x-auto pb-1">
-            <div class="flow-node" data-color="gray" onclick="showNodeDetail('champ')"><span class="text-base">👤</span><span class="text-[10px] text-gray-300 font-semibold">Champ</span></div>
+            <div class="flow-node" data-color="gray"><span class="text-base">👤</span><span class="text-[10px] text-gray-300 font-semibold">Champ</span></div>
             <div class="flow-arrow">›</div>
-            <div class="flow-node" data-color="sky" onclick="showNodeDetail('ace')"><span class="text-base">⭐</span><span class="text-[10px] text-sky-300 font-semibold">Ace</span><span class="text-[9px] text-gray-500">Delegate</span></div>
+            <div class="flow-node" data-color="indigo"><span class="text-base">📨</span><span class="text-[10px] text-indigo-300 font-semibold">Web Dispatch</span><span class="text-[9px] text-gray-500">Team tab</span></div>
             <div class="flow-arrow">›</div>
-            <div class="flex flex-col gap-1.5 flex-shrink-0">
-              <div class="flow-node" data-color="emerald" onclick="showNodeDetail('scout')"><div class="flex items-center gap-1"><span class="text-xs">🔍</span><span class="text-[10px] text-emerald-300 font-semibold">Scout</span></div></div>
-              <div class="flow-node" data-color="pink" onclick="showNodeDetail('arty')"><div class="flex items-center gap-1"><span class="text-xs">🎨</span><span class="text-[10px] text-pink-300 font-semibold">Arty</span></div></div>
-            </div>
+            <div class="flow-node" data-color="sky"><span class="text-base">🤖</span><span class="text-[10px] text-sky-300 font-semibold">Executor</span><span class="text-[9px] text-gray-500">Mac mini</span></div>
             <div class="flow-arrow">›</div>
-            <div class="flow-node" data-color="indigo" onclick="showNodeDetail('cody')"><span class="text-base">💻</span><span class="text-[10px] text-indigo-300 font-semibold">Cody</span><span class="text-[9px] text-gray-500">Build</span></div>
+            <div class="flow-node" data-color="violet"><span class="text-base">🧠</span><span class="text-[10px] text-violet-300 font-semibold">Claude</span><span class="text-[9px] text-gray-500">สวมหมวก</span></div>
             <div class="flow-arrow">›</div>
-            <div class="flow-node flow-gate" data-color="rose" onclick="showNodeDetail('spoty')"><span class="text-base">🛡️</span><span class="text-[10px] text-rose-300 font-semibold">Spoty</span><span class="text-[9px] text-rose-500/80">QA Gate</span></div>
-            <div class="flow-arrow">›</div>
-            <div class="flow-node" data-color="emerald" onclick="showNodeDetail('deploy')"><span class="text-base">🚀</span><span class="text-[10px] text-emerald-300 font-semibold">Deploy</span></div>
+            <div class="flow-node" data-color="emerald"><span class="text-base">✅</span><span class="text-[10px] text-emerald-300 font-semibold">ผล + log</span></div>
           </div>
         </div>
 
-        <!-- Visual Pipeline (NEW — Lens) -->
+        <!-- Hats -->
         <div>
-          <div class="pipeline-label text-violet-400">Visual Pipeline</div>
+          <div class="pipeline-label text-violet-400">หมวกของ Claude (mode ตามงาน)</div>
           <div class="flex items-center gap-2 pipeline-scroll overflow-x-auto pb-1">
-            <div class="flow-node" data-color="pink" onclick="showNodeDetail('arty')"><span class="text-base">🎨</span><span class="text-[10px] text-pink-300 font-semibold">Arty</span><span class="text-[9px] text-gray-500">Spec</span></div>
-            <div class="flow-arrow">›</div>
-            <div class="flow-node" data-color="amber" onclick="showNodeDetail('genai')"><span class="text-base">✨</span><span class="text-[10px] text-amber-300 font-semibold">GenAI</span><span class="text-[9px] text-gray-500">Nano / Higgsfield</span></div>
-            <div class="flow-arrow">›</div>
-            <div class="flow-node flow-gate" data-color="violet" onclick="showNodeDetail('lens')"><span class="text-base">🎬</span><span class="text-[10px] text-violet-300 font-semibold">Lens</span><span class="text-[9px] text-violet-400/80">Visual Gate</span></div>
-            <div class="flow-arrow">›</div>
-            <div class="flow-node" data-color="emerald" onclick="showNodeDetail('ship')"><span class="text-base">✅</span><span class="text-[10px] text-emerald-300 font-semibold">Ship</span></div>
+            <div class="flow-node" data-color="indigo"><span class="text-base">💻</span><span class="text-[10px] text-indigo-300 font-semibold">Dev</span></div>
+            <div class="flow-node" data-color="emerald"><span class="text-base">🔍</span><span class="text-[10px] text-emerald-300 font-semibold">Research</span></div>
+            <div class="flow-node" data-color="rose"><span class="text-base">🛡️</span><span class="text-[10px] text-rose-300 font-semibold">QA</span></div>
+            <div class="flow-node" data-color="pink"><span class="text-base">🎨</span><span class="text-[10px] text-pink-300 font-semibold">Design</span></div>
+            <div class="flow-node" data-color="amber"><span class="text-base">✍️</span><span class="text-[10px] text-amber-300 font-semibold">Content</span></div>
+            <div class="flow-node" data-color="sky"><span class="text-base">🧠</span><span class="text-[10px] text-sky-300 font-semibold">Ops</span></div>
           </div>
         </div>
 
-        <!-- Content Pipeline -->
+        <!-- Auto agents loop -->
         <div>
-          <div class="pipeline-label text-amber-400">Content Pipeline</div>
+          <div class="pipeline-label text-amber-400">Auto Agents (รันเองเบื้องหลัง 24/7)</div>
           <div class="flex items-center gap-2 pipeline-scroll overflow-x-auto pb-1">
-            <div class="flow-node" data-color="rose" onclick="showNodeDetail('amy')"><span class="text-base">👥</span><span class="text-[10px] text-rose-300 font-semibold">Amy</span><span class="text-[9px] text-gray-500">Insight first</span></div>
-            <div class="flow-arrow">›</div>
-            <div class="flex flex-col gap-1.5 flex-shrink-0">
-              <div class="flow-node" data-color="violet" onclick="showNodeDetail('coco')"><div class="flex items-center gap-1"><span class="text-xs">✍️</span><span class="text-[10px] text-violet-300 font-semibold">Coco</span></div></div>
-              <div class="flow-node" data-color="sky" onclick="showNodeDetail('pi')"><div class="flex items-center gap-1"><span class="text-xs">📐</span><span class="text-[10px] text-sky-300 font-semibold">Pi</span></div></div>
-              <div class="flow-node" data-color="emerald" onclick="showNodeDetail('book')"><div class="flex items-center gap-1"><span class="text-xs">🎓</span><span class="text-[10px] text-emerald-300 font-semibold">Book</span></div></div>
-            </div>
-            <div class="flow-arrow">›</div>
-            <div class="flow-node" data-color="emerald" onclick="showNodeDetail('content')"><span class="text-base">📦</span><span class="text-[10px] text-emerald-300 font-semibold">Content</span></div>
+            <div class="flow-node" data-color="amber"><span class="text-base">🥋</span><span class="text-[10px] text-amber-300 font-semibold">Poster Dojo</span><span class="text-[9px] text-gray-500">ทุก 3ชม.</span></div>
+            <div class="flow-node" data-color="emerald"><span class="text-base">💱</span><span class="text-[10px] text-emerald-300 font-semibold">Card Pipeline</span><span class="text-[9px] text-gray-500">07:00</span></div>
+            <div class="flow-node" data-color="rose"><span class="text-base">💓</span><span class="text-[10px] text-rose-300 font-semibold">Ops Heartbeat</span></div>
+            <div class="flow-node" data-color="sky"><span class="text-base">🔄</span><span class="text-[10px] text-sky-300 font-semibold">Claude Sync</span><span class="text-[9px] text-gray-500">per-turn</span></div>
           </div>
         </div>
 
-        <!-- Session Close -->
-        <div>
-          <div class="pipeline-label text-gray-500">Session Close</div>
-          <div class="flex items-center gap-2 pipeline-scroll overflow-x-auto pb-1">
-            <div class="flow-node" data-color="emerald" onclick="showNodeDetail('deploy')"><span class="text-base">🚀</span><span class="text-[10px] text-emerald-300 font-semibold">Deploy</span></div>
-            <div class="flow-arrow">›</div>
-            <div class="flow-node" data-color="indigo" onclick="showNodeDetail('spike')"><span class="text-base">📊</span><span class="text-[10px] text-indigo-300 font-semibold">Spike</span><span class="text-[9px] text-gray-500">Log</span></div>
-            <div class="flow-arrow">›</div>
-            <div class="flow-node" data-color="amber" onclick="showNodeDetail('memo')"><span class="text-base">🧠</span><span class="text-[10px] text-amber-300 font-semibold">Memo</span><span class="text-[9px] text-gray-500">Vault</span></div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- Flow Suggestions Panel -->
-    <div class="bg-gray-900/60 border border-gray-800/50 rounded-2xl overflow-hidden">
-      <div class="flex items-center justify-between px-4 pt-4 pb-3">
-        <div class="flex items-center gap-2">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          <h2 class="text-xs font-semibold text-gray-300 uppercase tracking-widest">Flow Suggestions</h2>
-          <span id="suggestion-count" class="text-xs bg-indigo-900/50 text-indigo-300 px-2 py-0.5 rounded-full hidden">0</span>
-        </div>
-      </div>
-      <div id="suggestions-list" class="px-4 pb-4 space-y-2">
-        <p class="text-gray-600 text-xs">ยังไม่มี suggestion — กด "Suggest" เพื่อเสนอ flow ใหม่</p>
-      </div>
-    </div>
-
-    <!-- Workflow Rules Summary -->
-    <div class="bg-gray-900/60 border border-gray-800/50 rounded-2xl p-4 space-y-2.5">
-      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Active Rules</h2>
-      <div class="rule-card" style="--rule-accent:#6366f1;--rule-border:rgba(99,102,241,0.4);--rule-glow:rgba(99,102,241,0.12)">
-        <span class="text-indigo-400 font-bold text-sm flex-shrink-0 mt-0.5">1</span>
-        <span class="text-gray-300 text-sm">Scout + Arty run <span class="text-white font-medium">in parallel</span> — Cody waits for both before building</span>
-      </div>
-      <div class="rule-card" style="--rule-accent:#f59e0b;--rule-border:rgba(245,158,11,0.4);--rule-glow:rgba(245,158,11,0.1)">
-        <span class="text-amber-400 font-bold text-sm flex-shrink-0 mt-0.5">2</span>
-        <span class="text-gray-300 text-sm">Amy insight is <span class="text-white font-medium">required before</span> Coco / Pi / Book create any content</span>
-      </div>
-      <div class="rule-card" style="--rule-accent:#10b981;--rule-border:rgba(16,185,129,0.4);--rule-glow:rgba(16,185,129,0.1)">
-        <span class="text-emerald-400 font-bold text-sm flex-shrink-0 mt-0.5">3</span>
-        <span class="text-gray-300 text-sm">Every session ends: <span class="text-white font-medium">Spike log → Memo vault</span> — both mandatory, no skipping</span>
-      </div>
-      <div class="rule-card" style="--rule-accent:#f43f5e;--rule-border:rgba(244,63,94,0.4);--rule-glow:rgba(244,63,94,0.12)">
-        <span class="text-rose-400 font-bold text-sm flex-shrink-0 mt-0.5">!</span>
-        <span class="text-gray-300 text-sm"><span class="text-rose-400 font-medium">Spoty gate</span> is mandatory before any deploy — no exceptions, no bypasses</span>
-      </div>
-      <div class="rule-card" style="--rule-accent:#8b5cf6;--rule-border:rgba(139,92,246,0.4);--rule-glow:rgba(139,92,246,0.12)">
-        <span class="text-violet-400 font-bold text-sm flex-shrink-0 mt-0.5">!</span>
-        <span class="text-gray-300 text-sm"><span class="text-violet-400 font-medium">Lens gate</span> is mandatory before any visual asset ships — no approval = no ship</span>
       </div>
     </div>
 
