@@ -11,6 +11,11 @@
   body { background:#0b0e14; }
   .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#1a1f2e;border:1px solid;border-radius:12px;padding:10px 16px;color:#fff;font-size:13px;z-index:60;box-shadow:0 8px 30px rgba(0,0,0,.4)}
   ::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:#2a3142;border-radius:4px}
+  .annot-wrap img{display:block}
+  .annot-layer{position:absolute;inset:0;border-radius:12px}
+  .annot-layer.active{cursor:crosshair;background:rgba(251,191,36,.04)}
+  .annot-box{position:absolute;border:2px solid #fbbf24;background:rgba(251,191,36,.15);border-radius:4px;pointer-events:none}
+  .annot-box span{position:absolute;top:-8px;left:-8px;width:16px;height:16px;background:#fbbf24;color:#000;font-size:10px;font-weight:700;border-radius:50%;display:grid;place-items:center}
 </style>
 </head>
 <body class="text-gray-200">
@@ -164,10 +169,15 @@ function render(){
     const reworked = st==='pending' && p.rework_round>0;
     const reworkBanner = reworked ? `<div class="text-[11px] text-violet-100 bg-violet-900/50 border border-violet-600/50 rounded-lg px-2 py-1.5">🔧 agent แก้มาแล้ว (รอบ ${p.rework_round}) — ช่วยตรวจรอบใหม่</div>` : '';
     const fails=(p.fails||[]).map(f=>`<div class="text-[11px] text-gray-400 flex gap-1.5 items-start"><span>${f.severity||'🟡'}</span><span class="text-gray-500 shrink-0">[${esc(f.id||'')}]</span><span>${esc(f.what||'')}</span></div>`).join('');
-    const img=p.imageUrl?`<img src="${esc(p.imageUrl)}" loading="lazy" class="w-full rounded-xl bg-gray-800">`:`<div class="aspect-square rounded-xl bg-gray-800 grid place-items-center text-gray-600 text-xs">no image</div>`;
+    const img=p.imageUrl?`<img src="${esc(p.imageUrl)}" loading="lazy" class="w-full rounded-xl bg-gray-800 block">`:`<div class="aspect-square rounded-xl bg-gray-800 grid place-items-center text-gray-600 text-xs">no image</div>`;
+    // ✏️ ปากกาวง: ใบที่ตรวจอยู่ (ยังไม่ผ่าน) วงจุดบนรูปได้ → agent เห็นพิกัด แก้ตรงจุด
+    const imgBlock = (!done && p.imageUrl) ? `
+      <div class="annot-wrap relative" data-id="${id}">${img}<div class="annot-layer" id="al-${id}" data-id="${id}"></div></div>
+      <button type="button" onclick="penToggle('${id}',this)" class="mt-1.5 w-full text-[11px] bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 rounded-lg py-1.5 transition">✏️ วงจุดที่ต้องแก้</button>
+      <div id="an-${id}" class="mt-1.5 space-y-1"></div>` : `<div>${img}</div>`;
     const champ=p.champ_comment?`<div class="text-[11px] text-indigo-300 bg-indigo-950/40 rounded-lg px-2 py-1.5">💬 ${esc(p.champ_comment)} ${p.reviewed_by?`<span class="text-gray-500">— ${esc(p.reviewed_by.split('@')[0])}</span>`:''}</div>`:'';
     return `<div class="bg-gray-900/60 border border-gray-800/60 rounded-2xl p-3 grid sm:grid-cols-[200px_1fr] gap-3">
-      <div>${img}</div>
+      <div>${imgBlock}</div>
       <div class="space-y-2 min-w-0">
         <div class="flex items-center justify-between gap-2">
           <div class="min-w-0"><div class="text-sm font-semibold text-gray-100 truncate">${esc(p.name||'untitled')}</div>
@@ -189,6 +199,51 @@ function render(){
           </div></div>`}
       </div></div>`;
   }).join('');
+  docs.forEach(p => { if (ANNOT[p.id]?.length) redrawAnnot(p.id); });   // วาด box เดิมกลับหลัง re-render
+}
+
+// ── ✏️ ปากกาวง (annotate) ────────────────────────────────
+const ANNOT = {};            // id → [{x,y,w,h, note}]  (พิกัด normalized 0-1)
+window.ANNOT = ANNOT;        // inline handlers (oninput/onclick) รันใน global scope ต้องเข้าถึงได้
+let _penId = null, _drawing = null;
+window.penToggle = function(id, btn) {
+  const on = _penId !== id;
+  _penId = on ? id : null;
+  document.querySelectorAll('.annot-layer').forEach(l => l.classList.toggle('active', l.dataset.id===_penId));
+  document.querySelectorAll('[onclick^="penToggle"]').forEach(b => { b.classList.remove('ring-2','ring-amber-400'); });
+  if (on) { btn.classList.add('ring-2','ring-amber-400'); btn.textContent='✏️ กำลังวง — ลากบนรูป (กดอีกครั้งเพื่อหยุด)'; }
+  else { btn.textContent='✏️ วงจุดที่ต้องแก้'; }
+};
+function layerXY(layer, e){ const r=layer.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width, y:(e.clientY-r.top)/r.height }; }
+document.addEventListener('pointerdown', e => {
+  const layer = e.target.closest('.annot-layer.active'); if (!layer) return;
+  e.preventDefault(); const p = layerXY(layer, e);
+  _drawing = { id:layer.dataset.id, x0:p.x, y0:p.y, el:document.createElement('div') };
+  _drawing.el.className='annot-box'; layer.appendChild(_drawing.el);
+});
+document.addEventListener('pointermove', e => {
+  if (!_drawing) return; const layer=document.getElementById('al-'+_drawing.id); const p=layerXY(layer,e);
+  const x=Math.min(p.x,_drawing.x0), y=Math.min(p.y,_drawing.y0), w=Math.abs(p.x-_drawing.x0), h=Math.abs(p.y-_drawing.y0);
+  Object.assign(_drawing.el.style,{left:x*100+'%',top:y*100+'%',width:w*100+'%',height:h*100+'%'});
+  _drawing.box={x,y,w,h};
+});
+document.addEventListener('pointerup', () => {
+  if (!_drawing) return; const d=_drawing; _drawing=null;
+  if (!d.box || d.box.w<0.02 || d.box.h<0.02) { d.el.remove(); return; }   // กันจุดจิ๋ว/คลิกพลาด
+  (ANNOT[d.id] = ANNOT[d.id]||[]).push({ ...d.box, note:'' });
+  redrawAnnot(d.id);
+});
+window.redrawAnnot = redrawAnnot;
+function redrawAnnot(id){
+  const layer=document.getElementById('al-'+id); const list=document.getElementById('an-'+id); const arr=ANNOT[id]||[];
+  if (layer){ layer.innerHTML = arr.map((a,i)=>`<div class="annot-box" style="left:${a.x*100}%;top:${a.y*100}%;width:${a.w*100}%;height:${a.h*100}%"><span>${i+1}</span></div>`).join(''); }
+  if (list){ list.innerHTML = arr.map((a,i)=>`<div class="flex items-center gap-1.5"><span class="text-[10px] w-4 h-4 grid place-items-center rounded-full bg-amber-400 text-black font-bold shrink-0">${i+1}</span><input value="${esc(a.note||'')}" oninput="ANNOT['${id}'][${i}].note=this.value" placeholder="จุดนี้แก้อะไร…" class="flex-1 bg-gray-800/70 border border-gray-700/50 rounded px-2 py-1 text-[11px] text-gray-200 placeholder-gray-600 focus:outline-none focus:border-amber-500/60"><button onclick="ANNOT['${id}'].splice(${i},1);redrawAnnot('${id}')" class="text-gray-500 hover:text-rose-400 text-xs px-1">✕</button></div>`).join(''); }
+}
+// แปลง box → คำบรรยายตำแหน่งให้ agent (ไทย) เช่น "มุมขวาบน (~75%,12%)"
+function annotToText(id){
+  const arr=ANNOT[id]||[]; if(!arr.length) return '';
+  const pos=(cx,cy)=>{const v=cy<0.34?'บน':cy>0.66?'ล่าง':'กลาง';const h=cx<0.34?'ซ้าย':cx>0.66?'ขวา':'กลาง';return (v==='กลาง'&&h==='กลาง')?'กลางภาพ':(v+h);};
+  return arr.map((a,i)=>`  ${i+1}. บริเวณ${pos(a.x+a.w/2,a.y+a.h/2)} (กรอบ x:${Math.round(a.x*100)}% y:${Math.round(a.y*100)}% w:${Math.round(a.w*100)}% h:${Math.round(a.h*100)}%) — ${a.note||'(จุดที่ต้องแก้)'}`).join('\n');
 }
 
 window.submit = async (id, status) => {
@@ -197,8 +252,9 @@ window.submit = async (id, status) => {
   const comment=((document.getElementById('dc-'+id)?.value||'').trim()) || (status==='revise' ? (p.champ_comment||'') : '');
   const asRule=document.getElementById('dr-'+id)?.checked;
   const sev=document.getElementById('ds-'+id)?.value||'🟡';
-  // "ให้แก้" = rework loop: ต้องมีคอมเมนต์บอก agent ว่าจะแก้อะไร
-  if (status==='revise' && !comment) { toast('พิมพ์บอกก่อนว่าให้แก้อะไร แล้วค่อยกดให้แก้ 🔁', '#fbbf24'); document.getElementById('dc-'+id)?.focus(); return; }
+  const annotText = annotToText(id);   // ✏️ จุดที่วงไว้บนรูป
+  // "ให้แก้" = rework loop: ต้องมีคอมเมนต์ หรือ วงจุดไว้ อย่างน้อยอย่างนึง
+  if (status==='revise' && !comment && !annotText) { toast('พิมพ์บอก หรือ ✏️วงจุดบนรูป ก่อนกดให้แก้ 🔁', '#fbbf24'); document.getElementById('dc-'+id)?.focus(); return; }
   delete drafts[id];
   try {
     if (status==='revise') {
@@ -207,15 +263,18 @@ window.submit = async (id, status) => {
       const task=[
         'Rework practice poster ที่ Champ กดให้แก้ ตาม ~/Projects/poster-dojo/PRACTICE.md (section REWORK).',
         `Poster: ${p.name||id}  (ไฟล์เดิม: practice/${p.name||id}.html)  ·  รอบแก้ที่ ${round}`,
-        `คอมเมนต์ Champ (สิ่งที่ต้องแก้): "${comment}"`,
+        comment ? `คอมเมนต์ Champ (สิ่งที่ต้องแก้): "${comment}"` : '',
+        annotText ? `จุดที่ Champ วงไว้บนรูป (พิกัด % จากมุมซ้ายบน — map ไป element ใน HTML ที่ตรงตำแหน่งนั้น แล้วแก้):\n${annotText}` : '',
         'หา HTML source: ถ้ามี practice/<name>.html ใช้เลย; ถ้าไม่มี ลอง ../uplevel-poster-template/samples/<name>.html แล้ว copy เป็น practice/<name>.html ก่อน (ห้ามแก้ sample ต้นฉบับ).',
-        'ทำ: อ่าน HTML นั้น + RUBRIC.md → แก้เฉพาะจุดที่ Champ บอก (อย่ารื้อทั้งใบ ถ้าจุดอื่นดีอยู่แล้ว) → bash render.sh practice/<name>.html practice/<name>.png → self-review เทียบ RUBRIC → push ทับใบเดิม (FIREBASE_KEY_PATH=~/Projects/up-level-leaderboard/service-account.json node firestore-sync.mjs push practice/<name>.png, ใช้ node LTS) → จากนั้น node firestore-sync.mjs status <name> pending เพื่อให้กลับมาให้ Champ ตรวจรอบใหม่. ทำ autonomous.',
-      ].join('\n');
+        'ทำ: อ่าน HTML นั้น + RUBRIC.md → แก้เฉพาะจุดที่ Champ บอก/วงไว้ (อย่ารื้อทั้งใบ ถ้าจุดอื่นดีอยู่แล้ว) → bash render.sh practice/<name>.html practice/<name>.png → self-review เทียบ RUBRIC → push ทับใบเดิม (FIREBASE_KEY_PATH=~/Projects/up-level-leaderboard/service-account.json node firestore-sync.mjs push practice/<name>.png, ใช้ node LTS) → จากนั้น node firestore-sync.mjs status <name> pending เพื่อให้กลับมาให้ Champ ตรวจรอบใหม่. ทำ autonomous.',
+      ].filter(Boolean).join('\n');
+      const fullComment = [comment, annotText && ('📍 วงจุดไว้:\n'+annotText)].filter(Boolean).join('\n');
       await addDoc(collection(db,'claude-tasks'), {
         task, project:'poster-dojo', status:'pending', source:'rework',
-        posterId:id, posterName:p.name||id, champ_comment:comment, rework_round:round,
+        posterId:id, posterName:p.name||id, champ_comment:fullComment, rework_round:round, annotations:ANNOT[id]||[],
         created_by:ME, created_at:serverTimestamp(),
       });
+      delete ANNOT[id];
       // mark the poster "reworking" so it leaves the review queue until the new render lands
       await updateDoc(doc(db,'poster-dojo',id), {
         status:'reworking', champ_comment:comment, reviewed_by:ME, reviewed_at:serverTimestamp(),
