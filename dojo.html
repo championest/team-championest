@@ -45,7 +45,7 @@
 
   <div class="flex items-center gap-1.5 text-[11px] mb-3" id="filter">
     <button data-f="pending" class="fbtn px-3 py-1.5 rounded-full bg-amber-500 text-gray-900 font-semibold">รอรีวิว <span id="cnt-pending"></span></button>
-    <button data-f="revise" class="fbtn px-3 py-1.5 rounded-full bg-gray-800 text-gray-400">ให้แก้</button>
+    <button data-f="reworking" class="fbtn px-3 py-1.5 rounded-full bg-gray-800 text-gray-400">🔧 กำลังแก้ <span id="cnt-rework"></span></button>
     <button data-f="approved" class="fbtn px-3 py-1.5 rounded-full bg-gray-800 text-gray-400">ผ่าน</button>
     <button data-f="all" class="fbtn px-3 py-1.5 rounded-full bg-gray-800 text-gray-400">ทั้งหมด</button>
     <span class="ml-auto text-[11px] text-gray-600" id="rubric-stat"></span>
@@ -131,8 +131,11 @@ function start(){
 
   onSnapshot(query(collection(db,'poster-dojo'), orderBy('created_at','desc'), limit(200)), snap => {
     DOCS = snap.docs.map(d => ({ id:d.id, ...d.data() }));
-    const pc = DOCS.filter(p => (p.status||'pending')==='pending').length;
+    const isQueue = p => { const s=p.status||'pending'; return s==='pending'||s==='revise'; };  // "รอรีวิว" = ทุกใบยังไม่ผ่าน + ไม่ได้กำลังแก้
+    const pc = DOCS.filter(isQueue).length;
+    const rc = DOCS.filter(p => p.status==='reworking').length;
     document.getElementById('cnt-pending').textContent = pc ? `(${pc})` : '';
+    const rcEl = document.getElementById('cnt-rework'); if (rcEl) rcEl.textContent = rc ? `(${rc})` : '';
     if (typing()) { pendingRender = true; } else render();
   }, e => { document.getElementById('grid').innerHTML = `<div class="text-rose-400 text-sm">โหลดไม่ได้: ${esc(e.code||e.message)}</div>`; });
 
@@ -146,17 +149,18 @@ function render(){
   pendingRender = false;
   const grid = document.getElementById('grid');
   let docs = DOCS;
-  if (FILTER !== 'all') docs = docs.filter(p => (p.status||'pending')===FILTER);
+  if (FILTER === 'pending') docs = docs.filter(p => { const s=p.status||'pending'; return s==='pending'||s==='revise'; });
+  else if (FILTER !== 'all') docs = docs.filter(p => (p.status||'pending')===FILTER);
   // sort by latest activity (updated_at) so a reworked poster bubbles to the top of the queue, not its old created_at slot
   const ms = p => (p.updated_at?.toMillis?.() ?? p.created_at?.toMillis?.() ?? 0);
   docs = docs.slice().sort((a,b) => ms(b) - ms(a));
   if (!docs.length) { grid.innerHTML = `<div class="text-gray-600 text-sm py-8 text-center">ไม่มีโพสในหมวด "${FILTER}" 🎉</div>`; return; }
   const vC = v => ({PASS:'emerald',REVISE:'amber',REJECT:'rose'}[v]||'gray');
   const stC = { pending:'amber', approved:'emerald', revise:'sky', reworking:'violet' };
-  const stLabel = (st,p) => st==='reworking' ? `🔧 กำลังแก้${p.rework_round?' รอบ '+p.rework_round:''}` : st;
+  const stLabel = (st,p) => st==='reworking' ? `🔧 กำลังแก้${p.rework_round?' รอบ '+p.rework_round:''}` : st==='revise' ? '🔁 รอแก้' : st;
 
   grid.innerHTML = docs.map(p => {
-    const id=p.id, vc=vC(p.verdict), st=p.status||'pending', done=st!=='pending';
+    const id=p.id, vc=vC(p.verdict), st=p.status||'pending', done=(st==='approved'||st==='reworking');
     const reworked = st==='pending' && p.rework_round>0;
     const reworkBanner = reworked ? `<div class="text-[11px] text-violet-100 bg-violet-900/50 border border-violet-600/50 rounded-lg px-2 py-1.5">🔧 agent แก้มาแล้ว (รอบ ${p.rework_round}) — ช่วยตรวจรอบใหม่</div>` : '';
     const fails=(p.fails||[]).map(f=>`<div class="text-[11px] text-gray-400 flex gap-1.5 items-start"><span>${f.severity||'🟡'}</span><span class="text-gray-500 shrink-0">[${esc(f.id||'')}]</span><span>${esc(f.what||'')}</span></div>`).join('');
@@ -188,10 +192,11 @@ function render(){
 }
 
 window.submit = async (id, status) => {
-  const comment=(document.getElementById('dc-'+id)?.value||'').trim();
+  const p=DOCS.find(x=>x.id===id)||{};
+  // ถ้ากด "ให้แก้" โดยไม่พิมพ์ใหม่ → ใช้คอมเมนต์เดิมที่มีอยู่ (เช่นที่เนมรีวิวไว้)
+  const comment=((document.getElementById('dc-'+id)?.value||'').trim()) || (status==='revise' ? (p.champ_comment||'') : '');
   const asRule=document.getElementById('dr-'+id)?.checked;
   const sev=document.getElementById('ds-'+id)?.value||'🟡';
-  const p=DOCS.find(x=>x.id===id)||{};
   // "ให้แก้" = rework loop: ต้องมีคอมเมนต์บอก agent ว่าจะแก้อะไร
   if (status==='revise' && !comment) { toast('พิมพ์บอกก่อนว่าให้แก้อะไร แล้วค่อยกดให้แก้ 🔁', '#fbbf24'); document.getElementById('dc-'+id)?.focus(); return; }
   delete drafts[id];
@@ -203,7 +208,8 @@ window.submit = async (id, status) => {
         'Rework practice poster ที่ Champ กดให้แก้ ตาม ~/Projects/poster-dojo/PRACTICE.md (section REWORK).',
         `Poster: ${p.name||id}  (ไฟล์เดิม: practice/${p.name||id}.html)  ·  รอบแก้ที่ ${round}`,
         `คอมเมนต์ Champ (สิ่งที่ต้องแก้): "${comment}"`,
-        'ทำ: อ่าน practice/<name>.html + RUBRIC.md → แก้เฉพาะจุดที่ Champ บอก (อย่ารื้อทั้งใบ ถ้าจุดอื่นดีอยู่แล้ว) → bash render.sh → self-review เทียบ RUBRIC → push ทับใบเดิม (FIREBASE_KEY_PATH=~/Projects/up-level-leaderboard/service-account.json node firestore-sync.mjs push practice/<name>.png, ใช้ node LTS) → จากนั้น set doc poster-dojo/<name> field status="pending" (merge) เพื่อให้กลับมาให้ Champ ตรวจรอบใหม่. ทำ autonomous.',
+        'หา HTML source: ถ้ามี practice/<name>.html ใช้เลย; ถ้าไม่มี ลอง ../uplevel-poster-template/samples/<name>.html แล้ว copy เป็น practice/<name>.html ก่อน (ห้ามแก้ sample ต้นฉบับ).',
+        'ทำ: อ่าน HTML นั้น + RUBRIC.md → แก้เฉพาะจุดที่ Champ บอก (อย่ารื้อทั้งใบ ถ้าจุดอื่นดีอยู่แล้ว) → bash render.sh practice/<name>.html practice/<name>.png → self-review เทียบ RUBRIC → push ทับใบเดิม (FIREBASE_KEY_PATH=~/Projects/up-level-leaderboard/service-account.json node firestore-sync.mjs push practice/<name>.png, ใช้ node LTS) → จากนั้น node firestore-sync.mjs status <name> pending เพื่อให้กลับมาให้ Champ ตรวจรอบใหม่. ทำ autonomous.',
       ].join('\n');
       await addDoc(collection(db,'claude-tasks'), {
         task, project:'poster-dojo', status:'pending', source:'rework',
