@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forge — อนุมัติแก้บัค</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { font-family: 'Inter', sans-serif; }
+  body { background:#0b0e14; }
+  .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#1a1f2e;border:1px solid;border-radius:12px;padding:10px 16px;color:#fff;font-size:13px;z-index:60;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+  ::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:#2a3142;border-radius:4px}
+</style>
+</head>
+<body class="text-gray-200">
+
+<div id="gate" class="fixed inset-0 flex items-center justify-center z-50 px-4" style="background:radial-gradient(circle at 50% 30%,#141a2e,#0b0e14)">
+  <div class="text-center max-w-sm w-full">
+    <div class="text-5xl mb-3">🔨</div>
+    <h1 class="text-2xl font-bold text-white">Forge</h1>
+    <p class="text-sm text-gray-400 mt-1 mb-6">อนุมัติ PR แก้บัค · เฉพาะแอดมิน</p>
+    <button id="signin" class="w-full bg-white text-gray-800 font-semibold rounded-xl py-3 flex items-center justify-center gap-2 hover:opacity-90">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38z"/></svg>
+      เข้าสู่ระบบด้วย Google
+    </button>
+    <p id="gate-msg" class="text-xs text-rose-400 mt-4 hidden"></p>
+  </div>
+</div>
+
+<div id="app" class="hidden max-w-3xl mx-auto px-3 py-4">
+  <header class="flex items-center justify-between mb-3 sticky top-0 bg-[#0b0e14]/95 backdrop-blur py-2 z-30">
+    <div>
+      <h1 class="text-lg font-bold text-white flex items-center gap-2">🔨 Forge <span class="text-xs font-normal text-gray-500">อนุมัติแก้บัค</span></h1>
+      <p class="text-[11px] text-gray-500">กด ✅ = merge + deploy · 🔁 = ตีกลับ</p>
+    </div>
+    <div class="text-right">
+      <div id="me" class="text-[11px] text-gray-400"></div>
+      <button id="signout" class="text-[11px] text-gray-500 hover:text-gray-300 underline">ออกจากระบบ</button>
+    </div>
+  </header>
+
+  <div class="flex items-center gap-1.5 text-[11px] mb-3 flex-wrap" id="filter">
+    <button data-f="pr-open" class="fbtn px-3 py-1.5 rounded-full bg-amber-500 text-gray-900 font-semibold">รออนุมัติ <span id="cnt-pr"></span></button>
+    <button data-f="active" class="fbtn px-3 py-1.5 rounded-full bg-gray-800 text-gray-400">กำลังแก้</button>
+    <button data-f="needs-info" class="fbtn px-3 py-1.5 rounded-full bg-gray-800 text-gray-400">ขอข้อมูล</button>
+    <button data-f="resolved" class="fbtn px-3 py-1.5 rounded-full bg-gray-800 text-gray-400">แก้แล้ว</button>
+    <button data-f="all" class="fbtn px-3 py-1.5 rounded-full bg-gray-800 text-gray-400">ทั้งหมด</button>
+  </div>
+
+  <div id="grid" class="space-y-3"><div class="text-gray-600 text-sm">Loading…</div></div>
+  <div class="text-center text-gray-700 text-[11px] py-6">Up Level · Forge bug-to-fix console</div>
+</div>
+
+<div id="toast-wrap"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, collection, doc, query, orderBy, limit, onSnapshot, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAKxWv3FI7HrdrRlnJhsQbJ-97Pb_sdiOQ",
+  authDomain: "up-level-guild.firebaseapp.com",
+  projectId: "up-level-guild",
+  storageBucket: "up-level-guild.firebasestorage.app",
+  messagingSenderId: "721710985300",
+  appId: "1:721710985300:web:c51e13963373a6feadbdc1"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const REVIEWERS = new Set([
+  'champ.championest@gmail.com', 'namenrw@gmail.com', 'chawanut.cha@gmail.com',
+  'boomboom08755@gmail.com', 'nuslove2560@gmail.com', 'phooreephat.k@gmail.com',
+]);
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ago = ts => { if(!ts) return ''; const d=ts.toDate?ts.toDate():new Date(ts); const s=Math.floor((Date.now()-d)/1000); if(s<60)return s+'s'; if(s<3600)return Math.floor(s/60)+'m'; if(s<86400)return Math.floor(s/3600)+'h'; return Math.floor(s/86400)+'d'; };
+const toast = (m,c='#34d399') => { const t=document.createElement('div'); t.className='toast'; t.style.borderColor=c; t.textContent=m; document.getElementById('toast-wrap').appendChild(t); setTimeout(()=>t.remove(),3000); };
+
+let ME = null, DOCS = [], FILTER = 'pr-open';
+
+document.getElementById('signin').onclick = async () => {
+  const p = new GoogleAuthProvider(); p.setCustomParameters({ prompt:'select_account' });
+  try { await signInWithPopup(auth, p); }
+  catch(e){ if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'){ try{await signInWithRedirect(auth,p);}catch(_){}}
+    else if(e.code==='auth/unauthorized-domain'){ gateMsg('โดเมนนี้ยังไม่อนุญาตใน Firebase Auth — แจ้ง Champ เพิ่ม championest.github.io'); }
+    else if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request'){ gateMsg('login ไม่สำเร็จ: '+(e.code||'error')); } }
+};
+document.getElementById('signout').onclick = () => signOut(auth);
+getRedirectResult(auth).catch(()=>{});
+function gateMsg(m){ const e=document.getElementById('gate-msg'); e.textContent=m; e.classList.remove('hidden'); }
+
+onAuthStateChanged(auth, user => {
+  if (user && REVIEWERS.has((user.email||'').toLowerCase())) {
+    ME = user.email;
+    document.getElementById('gate').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    document.getElementById('me').textContent = '🟢 ' + user.email;
+    start();
+  } else if (user) {
+    gateMsg('เมล ' + user.email + ' ไม่มีสิทธิ์ — ติดต่อ Champ');
+    setTimeout(()=>signOut(auth), 100);
+  } else {
+    document.getElementById('app').classList.add('hidden');
+    document.getElementById('gate').classList.remove('hidden');
+  }
+});
+
+let started = false;
+function start(){
+  if (started) return; started = true;
+  document.querySelectorAll('.fbtn').forEach(b => b.onclick = () => {
+    FILTER = b.dataset.f;
+    document.querySelectorAll('.fbtn').forEach(x=>x.className='fbtn px-3 py-1.5 rounded-full bg-gray-800 text-gray-400');
+    b.className='fbtn px-3 py-1.5 rounded-full bg-amber-500 text-gray-900 font-semibold';
+    render();
+  });
+  onSnapshot(query(collection(db,'bug-reports'), orderBy('createdAt','desc'), limit(200)), snap => {
+    DOCS = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    const pc = DOCS.filter(p => p.status==='pr-open').length;
+    document.getElementById('cnt-pr').textContent = pc ? `(${pc})` : '';
+    render();
+  }, e => { document.getElementById('grid').innerHTML = `<div class="text-rose-400 text-sm">โหลดไม่ได้: ${esc(e.code||e.message)}</div>`; });
+}
+
+const SEV = { critical:'🔴', high:'🟠', medium:'🟡', low:'⚪' };
+const ACTIVE = new Set(['new','triaged','fixing','in-review','deploying','approved']);
+
+function render(){
+  const grid = document.getElementById('grid');
+  let docs = DOCS;
+  if (FILTER === 'active') docs = docs.filter(p => ACTIVE.has(p.status));
+  else if (FILTER !== 'all') docs = docs.filter(p => p.status===FILTER);
+  if (!docs.length) { grid.innerHTML = `<div class="text-gray-600 text-sm py-8 text-center">ไม่มีบัคในหมวด "${FILTER}" 🎉</div>`; return; }
+  const stC = { 'pr-open':'amber', resolved:'emerald', rejected:'rose', 'needs-info':'sky', fixing:'indigo', 'fix-failed':'rose', 'deploy-failed':'rose', deploying:'violet', new:'gray', triaged:'gray', wontfix:'gray' };
+
+  grid.innerHTML = docs.map(p => {
+    const id=p.id, st=p.status||'new', canAct=st==='pr-open';
+    const errs=(p.consoleErrors||[]).slice(0,3).map(e=>`<div class="text-[10px] text-gray-500 font-mono truncate">${esc(e)}</div>`).join('');
+    const pr=p.prUrl?`<a href="${esc(p.prUrl)}" target="_blank" class="text-[11px] text-sky-400 underline">🔗 ดู PR</a>`:'';
+    const info=p.needInfo?`<div class="text-[11px] text-sky-300 bg-sky-950/40 rounded-lg px-2 py-1.5">❓ ${esc(p.needInfo)}</div>`:'';
+    const fail=(p.fixError||p.deployError)?`<div class="text-[11px] text-rose-300 bg-rose-950/40 rounded-lg px-2 py-1.5">⚠️ ${esc(p.fixError||p.deployError)}</div>`:'';
+    return `<div class="bg-gray-900/60 border border-gray-800/60 rounded-2xl p-3 space-y-2">
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <div class="text-sm font-semibold text-gray-100">${SEV[p.severity]||''} ${esc(p.title||'(no title)')}</div>
+          <div class="text-[10px] text-gray-500">${esc([p.project, p.source, p.createdAt?ago(p.createdAt)+' ago':''].filter(Boolean).join(' · '))}</div>
+        </div>
+        <span class="text-[10px] px-1.5 py-0.5 rounded bg-${stC[st]||'gray'}-900/40 text-${stC[st]||'gray'}-300 shrink-0">${st}</span>
+      </div>
+      ${p.summary?`<div class="text-[12px] text-gray-300">${esc(p.summary)}</div>`:''}
+      ${p.fixSummary?`<div class="text-[11px] text-emerald-300 bg-emerald-950/30 rounded-lg px-2 py-1.5">🔧 ${esc(p.fixSummary)}</div>`:''}
+      ${p.rootCause?`<div class="text-[11px] text-gray-400">🎯 ${esc(p.rootCause)}</div>`:''}
+      ${info}${fail}
+      ${errs?`<div class="border-t border-gray-800/60 pt-1.5 space-y-0.5">${errs}</div>`:''}
+      <div class="flex items-center gap-3 pt-1">${pr}
+        ${p.url?`<a href="${esc(p.url)}" target="_blank" class="text-[11px] text-gray-500 underline truncate">หน้าที่เกิดบัค</a>`:''}</div>
+      ${canAct?`<div class="flex gap-2 border-t border-gray-800/60 pt-2">
+        <button onclick="act('${id}','approved')" class="flex-1 bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs font-semibold rounded-lg py-2">✅ Merge & Deploy</button>
+        <button onclick="act('${id}','rejected')" class="flex-1 bg-rose-600/70 hover:bg-rose-600 text-white text-xs font-medium rounded-lg py-2">🔁 ตีกลับ</button>
+      </div>`:''}
+    </div>`;
+  }).join('');
+}
+
+window.act = async (id, status) => {
+  try {
+    await updateDoc(doc(db,'bug-reports',id), { status, reviewedBy:ME, reviewedAt:serverTimestamp(), forgeNotified:false });
+    toast(status==='approved'?'อนุมัติแล้ว — กำลัง deploy ✅':'ตีกลับแล้ว 🔁');
+  } catch(e){ toast('error: '+(e.code||e.message), '#f87171'); }
+};
+</script>
+</body>
+</html>
