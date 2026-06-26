@@ -2980,11 +2980,10 @@ window.markTaskDoneWithScore = async function(taskId, member) {
   await updateMemberScore(member, 0, 1);
 };
 
-// Load ranking when tab opens
+// Lazy-load Ops feeds on first open
 const origSwitch = window.switchTab;
 window.switchTab = function(tab) {
   origSwitch(tab);
-  if (tab === 'ranking') loadRanking();
   if (tab === 'ops' && window.loadOps) window.loadOps();   // lazy: attach Ops + dispatch listeners on first open
 };
 
