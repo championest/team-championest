@@ -1842,6 +1842,7 @@ function applyAuthUI(user) {
     compose.classList.add('hidden');
     locked.classList.remove('hidden');   // show "view-only" hint whether logged out or non-admin
   }
+  window._renderAgents?.();   // show/hide Live Agents control buttons by admin state
 }
 
 // Best-effort preflight: detect when this host isn't authorized in Firebase Auth
