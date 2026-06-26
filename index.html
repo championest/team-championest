@@ -1490,7 +1490,7 @@ window.loadDispatch = function loadDispatch() {
     { key:'tokens', svc:'com.championest.ops-tokens', icon:'💰', name:'Ops Tokens', where:'Mac mini', persistent:false,
       desc:'รวมค่า token รายวัน → Ops tab', sched:'daily',
       proj:'general', nudge:'kickstart com.championest.ops-tokens เดี๋ยวนี้ แล้วรายงานยอด token/ค่าใช้จ่ายวันนี้' },
-    { key:'sync', svc:'com.championest.brain-sync-ssh', icon:'🔄', name:'Brain Sync', where:'Air↔mini', persistent:true,
+    { key:'sync', svc:'com.championest.brain-sync-ssh', icon:'🔄', name:'Brain Sync', where:'Air↔mini', persistent:false,
       desc:'sync ~/.claude + memory + work-state ข้ามเครื่อง (rsync over SSH)', sched:'ทุก ~2 นาที',
       proj:'general', nudge:'kickstart com.championest.brain-sync-ssh เดี๋ยวนี้ แล้วยืนยันว่า sync สำเร็จ (ไม่มี error)' },
   ];
