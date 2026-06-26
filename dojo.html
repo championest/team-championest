@@ -147,6 +147,9 @@ function render(){
   const grid = document.getElementById('grid');
   let docs = DOCS;
   if (FILTER !== 'all') docs = docs.filter(p => (p.status||'pending')===FILTER);
+  // sort by latest activity (updated_at) so a reworked poster bubbles to the top of the queue, not its old created_at slot
+  const ms = p => (p.updated_at?.toMillis?.() ?? p.created_at?.toMillis?.() ?? 0);
+  docs = docs.slice().sort((a,b) => ms(b) - ms(a));
   if (!docs.length) { grid.innerHTML = `<div class="text-gray-600 text-sm py-8 text-center">ไม่มีโพสในหมวด "${FILTER}" 🎉</div>`; return; }
   const vC = v => ({PASS:'emerald',REVISE:'amber',REJECT:'rose'}[v]||'gray');
   const stC = { pending:'amber', approved:'emerald', revise:'sky', reworking:'violet' };
@@ -154,6 +157,8 @@ function render(){
 
   grid.innerHTML = docs.map(p => {
     const id=p.id, vc=vC(p.verdict), st=p.status||'pending', done=st!=='pending';
+    const reworked = st==='pending' && p.rework_round>0;
+    const reworkBanner = reworked ? `<div class="text-[11px] text-violet-100 bg-violet-900/50 border border-violet-600/50 rounded-lg px-2 py-1.5">🔧 agent แก้มาแล้ว (รอบ ${p.rework_round}) — ช่วยตรวจรอบใหม่</div>` : '';
     const fails=(p.fails||[]).map(f=>`<div class="text-[11px] text-gray-400 flex gap-1.5 items-start"><span>${f.severity||'🟡'}</span><span class="text-gray-500 shrink-0">[${esc(f.id||'')}]</span><span>${esc(f.what||'')}</span></div>`).join('');
     const img=p.imageUrl?`<img src="${esc(p.imageUrl)}" loading="lazy" class="w-full rounded-xl bg-gray-800">`:`<div class="aspect-square rounded-xl bg-gray-800 grid place-items-center text-gray-600 text-xs">no image</div>`;
     const champ=p.champ_comment?`<div class="text-[11px] text-indigo-300 bg-indigo-950/40 rounded-lg px-2 py-1.5">💬 ${esc(p.champ_comment)} ${p.reviewed_by?`<span class="text-gray-500">— ${esc(p.reviewed_by.split('@')[0])}</span>`:''}</div>`:'';
@@ -167,6 +172,7 @@ function render(){
           <span class="text-[10px] px-1.5 py-0.5 rounded bg-${stC[st]||'gray'}-900/40 text-${stC[st]||'gray'}-300 ml-1${st==='reworking'?' animate-pulse':''}">${esc(stLabel(st,p))}</span>
           <div class="text-xs text-gray-400">${p.grade??'-'}/100</div></div>
         </div>
+        ${reworkBanner}
         ${fails?`<div class="space-y-1 border-t border-gray-800/60 pt-2">${fails}</div>`:''}
         ${champ}
         ${done?'':`<div class="space-y-2 border-t border-gray-800/60 pt-2">
