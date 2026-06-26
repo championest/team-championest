@@ -1351,7 +1351,7 @@ async function init() {
   // Off-screen tabs → defer to idle time: faster first paint, fewer simultaneous
   // listener attaches / less layout work on load. Ops feeds load lazily on tab open.
   const idle = window.requestIdleCallback || (cb => setTimeout(cb, 200));
-  idle(() => { loadNotes(); loadProjects(); loadSkillUsage(); loadSuggestions(); });
+  idle(() => { loadNotes(); loadProjects(); loadSkillUsage(); });
 }
 
 // ─── Ops Hub: machine status · token cost · dispatch feed ───────
