@@ -77,6 +77,14 @@
     .pin-btn:hover { opacity: 0.9; transform: translateY(-1px); }
     .pin-btn:active { transform: translateY(0); }
 
+    /* ── UX baseline · keyboard focus ring (added 2026-06-26, pending Spoty review) ──
+       Visible ring for keyboard users only (WCAG 2.4.7); indigo for the dark theme. */
+    a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible,
+    textarea:focus-visible, [tabindex]:focus-visible {
+      outline: 2px solid #818cf8; outline-offset: 2px; border-radius: 8px;
+    }
+    :focus:not(:focus-visible) { outline: none; }
+
     /* Floating Dock Tabs */
     .dock-wrap {
       display: flex;
