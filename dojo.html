@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Poster Dojo — รีวิว</title>
+<title>Poster Dojo — รีวิว + Inspiration</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -48,6 +48,70 @@
     </div>
   </header>
 
+  <!-- VIEW TABS -->
+  <div class="flex items-center gap-2 mb-4">
+    <button data-v="review" class="vbtn px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold">🥋 รีวิวโพส</button>
+    <button data-v="inspo" class="vbtn px-4 py-2 rounded-xl bg-gray-800 text-gray-400 text-sm font-semibold">🖼️ เพิ่ม Inspiration</button>
+  </div>
+
+  <!-- ░░ INSPIRATION INTAKE ░░ -->
+  <div id="view-inspo" class="hidden space-y-4">
+    <div class="bg-gray-900/60 border border-gray-800/60 rounded-2xl p-4 space-y-3">
+      <div>
+        <h2 class="text-base font-bold text-white flex items-center gap-2">🖼️ เพิ่มภาพ Inspiration</h2>
+        <p class="text-[11px] text-gray-500 mt-0.5 leading-relaxed">เจอโพสสวยๆ ที่ไหนก็ตาม → แอดรูปเข้ามาที่นี่ + อธิบายว่าชอบอะไร. Dojo จะ <b class="text-gray-300">แกะ (deconstruct)</b> ภาพออกเป็นเทมเพลต HTML แบบแก้ได้ 30+ เลเยอร์ แล้วฝึกทำสไตล์นั้นเอง.</p>
+      </div>
+
+      <!-- dropzone -->
+      <label id="drop" class="block border-2 border-dashed border-gray-700 hover:border-indigo-500/70 rounded-xl cursor-pointer transition-colors">
+        <input id="ifile" type="file" accept="image/*" class="hidden">
+        <div id="drop-empty" class="py-10 text-center">
+          <div class="text-4xl mb-2">⬆️</div>
+          <div class="text-sm text-gray-300 font-medium">ลากรูปมาวาง หรือ กดเพื่อเลือกรูป</div>
+          <div class="text-[11px] text-gray-600 mt-1">PNG / JPG · ระบบย่อรูปให้อัตโนมัติ</div>
+        </div>
+        <div id="drop-preview" class="hidden p-3">
+          <img id="ipreview" class="w-full max-h-80 object-contain rounded-lg bg-gray-800">
+          <div id="isize" class="text-center text-[11px] text-gray-500 mt-2"></div>
+        </div>
+      </label>
+
+      <!-- fields -->
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label class="text-[11px] text-gray-400 block mb-1">เกม</label>
+          <select id="igame" class="w-full bg-gray-800 border border-gray-700/50 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-indigo-500/60">
+            <option value="lorcana">Lorcana</option>
+            <option value="pokemon">Pokémon</option>
+            <option value="magic">Magic</option>
+            <option value="riftbound">Riftbound</option>
+            <option value="other">อื่นๆ / ทั่วไป</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-[11px] text-gray-400 block mb-1">หัวข้อ/ชื่อโพส <span class="text-gray-600">(ถ้ามี)</span></label>
+          <input id="iheadline" type="text" placeholder="เช่น เปิดจอง Set 13" class="w-full bg-gray-800 border border-gray-700/50 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-indigo-500/60">
+        </div>
+      </div>
+      <div>
+        <label class="text-[11px] text-gray-400 block mb-1">อธิบาย — ชอบอะไร / อยากให้แกะอะไร</label>
+        <textarea id="inote" rows="3" placeholder="เช่น ชอบ layout การ์ดเอียงมุม + แสง neon ด้านหลัง อยากได้สไตล์โทนมืดแบบนี้มาทำโพสเปิดจอง" class="w-full bg-gray-800 border border-gray-700/50 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 resize-none focus:outline-none focus:border-indigo-500/60"></textarea>
+      </div>
+      <button id="isubmit" class="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-xl py-3 text-sm">ส่งเข้า Dojo →</button>
+    </div>
+
+    <!-- submitted ideas -->
+    <div>
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-sm font-semibold text-gray-300">Inspiration ที่ส่งแล้ว</h3>
+        <span class="text-[11px] text-gray-600" id="ideas-stat"></span>
+      </div>
+      <div id="ideas" class="grid grid-cols-2 sm:grid-cols-3 gap-2"><div class="text-gray-600 text-sm col-span-full">Loading…</div></div>
+    </div>
+  </div>
+
+  <!-- ░░ REVIEW QUEUE ░░ -->
+  <div id="view-review">
   <div class="flex items-center gap-1.5 text-[11px] mb-3" id="filter">
     <button data-f="pending" class="fbtn px-3 py-1.5 rounded-full bg-amber-500 text-gray-900 font-semibold">รอรีวิว <span id="cnt-pending"></span></button>
     <button data-f="reworking" class="fbtn px-3 py-1.5 rounded-full bg-gray-800 text-gray-400">🔧 กำลังแก้ <span id="cnt-rework"></span></button>
@@ -57,7 +121,8 @@
   </div>
 
   <div id="grid" class="space-y-3"><div class="text-gray-600 text-sm">Loading…</div></div>
-  <div class="text-center text-gray-700 text-[11px] py-6">Up Level · Poster Dojo review console</div>
+  </div><!-- /view-review -->
+  <div class="text-center text-gray-700 text-[11px] py-6">Up Level · Poster Dojo console</div>
 </div>
 
 <div id="toast-wrap"></div>
@@ -148,6 +213,99 @@ function start(){
     const nw = snap.docs.filter(d=>!d.data().applied).length;
     document.getElementById('rubric-stat').textContent = `📖 ${snap.size} กฎ · ${nw} รอ sync`;
   });
+
+  // ── view toggle ──
+  document.querySelectorAll('.vbtn').forEach(b => b.onclick = () => {
+    const v = b.dataset.v;
+    document.querySelectorAll('.vbtn').forEach(x=>x.className='vbtn px-4 py-2 rounded-xl bg-gray-800 text-gray-400 text-sm font-semibold');
+    b.className='vbtn px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold';
+    document.getElementById('view-review').classList.toggle('hidden', v!=='review');
+    document.getElementById('view-inspo').classList.toggle('hidden', v!=='inspo');
+  });
+
+  initInspo();
+}
+
+// ── inspiration intake ──
+let IDEA_DATAURL = null;
+function resizeToDataURL(file, maxDim, quality){
+  return new Promise((res,rej)=>{
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      let w=img.width, h=img.height;
+      if (Math.max(w,h) > maxDim){ const s=maxDim/Math.max(w,h); w=Math.round(w*s); h=Math.round(h*s); }
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);
+      res(c.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('โหลดรูปไม่ได้')); };
+    img.src = url;
+  });
+}
+async function handleFile(file){
+  if (!file || !file.type.startsWith('image/')) { toast('ไฟล์ไม่ใช่รูป', '#f87171'); return; }
+  // shrink until data-URL comfortably under Firestore's 1MB doc limit
+  let dataUrl = await resizeToDataURL(file, 1100, 0.82);
+  let q = 0.82, dim = 1100;
+  while (dataUrl.length > 720000 && (q > 0.45 || dim > 700)) {
+    if (q > 0.5) q -= 0.1; else dim -= 150;
+    dataUrl = await resizeToDataURL(file, dim, q);
+  }
+  IDEA_DATAURL = dataUrl;
+  document.getElementById('ipreview').src = dataUrl;
+  document.getElementById('isize').textContent = `~${Math.round(dataUrl.length/1024)} KB`;
+  document.getElementById('drop-empty').classList.add('hidden');
+  document.getElementById('drop-preview').classList.remove('hidden');
+}
+function initInspo(){
+  const fileInput = document.getElementById('ifile'), drop = document.getElementById('drop');
+  fileInput.onchange = e => { if (e.target.files[0]) handleFile(e.target.files[0]); };
+  ['dragover','dragenter'].forEach(ev => drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.add('border-indigo-500'); }));
+  ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e=>{ e.preventDefault(); drop.classList.remove('border-indigo-500'); }));
+  drop.addEventListener('drop', e => { const f=e.dataTransfer.files[0]; if(f) handleFile(f); });
+
+  document.getElementById('isubmit').onclick = async () => {
+    if (!IDEA_DATAURL) { toast('แอดรูปก่อนนะ', '#f87171'); return; }
+    const btn = document.getElementById('isubmit');
+    btn.disabled = true; btn.textContent = 'กำลังส่ง…';
+    try {
+      await addDoc(collection(db,'poster-ideas'), {
+        imageB64: IDEA_DATAURL,
+        game: document.getElementById('igame').value,
+        headline: document.getElementById('iheadline').value.trim() || null,
+        note: document.getElementById('inote').value.trim() || null,
+        status: 'new',
+        by: ME,
+        created_at: serverTimestamp(),
+      });
+      toast('ส่งเข้า Dojo แล้ว ✓ — เดี๋ยว Dojo จะแกะภาพนี้');
+      IDEA_DATAURL = null;
+      document.getElementById('ifile').value = '';
+      document.getElementById('iheadline').value = '';
+      document.getElementById('inote').value = '';
+      document.getElementById('drop-empty').classList.remove('hidden');
+      document.getElementById('drop-preview').classList.add('hidden');
+    } catch(e){ toast('error: '+(e.code||e.message), '#f87171'); }
+    btn.disabled = false; btn.textContent = 'ส่งเข้า Dojo →';
+  };
+
+  onSnapshot(query(collection(db,'poster-ideas'), orderBy('created_at','desc'), limit(60)), snap => {
+    const ideas = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    document.getElementById('ideas-stat').textContent = ideas.length ? `${ideas.length} ภาพ` : '';
+    const box = document.getElementById('ideas');
+    if (!ideas.length) { box.innerHTML = `<div class="text-gray-600 text-sm col-span-full py-6 text-center">ยังไม่มี inspiration — แอดภาพแรกได้เลย 🖼️</div>`; return; }
+    const stBadge = { new:['amber','รอแกะ'], queued:['sky','คิว'], done:['emerald','เสร็จ'], skipped:['gray','ข้าม'] };
+    box.innerHTML = ideas.map(d => {
+      const [c,lbl] = stBadge[d.status] || ['gray', d.status||'?'];
+      const img = d.imageB64 ? `<img src="${esc(d.imageB64)}" loading="lazy" class="w-full aspect-square object-cover">` : `<div class="aspect-square grid place-items-center text-gray-600 text-xs">no image</div>`;
+      return `<div class="relative rounded-xl overflow-hidden bg-gray-800 border border-gray-800/60 group">
+        ${img}
+        <span class="absolute top-1.5 left-1.5 text-[10px] px-1.5 py-0.5 rounded bg-${c}-900/80 text-${c}-200">${lbl}</span>
+        ${d.note?`<div class="absolute inset-x-0 bottom-0 bg-black/70 text-[10px] text-gray-200 px-1.5 py-1 line-clamp-2 opacity-0 group-hover:opacity-100 transition">${esc(d.note)}</div>`:''}
+      </div>`;
+    }).join('');
+  }, e => { document.getElementById('ideas').innerHTML = `<div class="text-rose-400 text-sm col-span-full">โหลดไม่ได้: ${esc(e.code||e.message)}</div>`; });
 }
 
 function render(){
