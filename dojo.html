@@ -270,16 +270,33 @@ function initInspo(){
     const btn = document.getElementById('isubmit');
     btn.disabled = true; btn.textContent = 'กำลังส่ง…';
     try {
-      await addDoc(collection(db,'poster-ideas'), {
-        imageB64: IDEA_DATAURL,
-        game: document.getElementById('igame').value,
-        headline: document.getElementById('iheadline').value.trim() || null,
-        note: document.getElementById('inote').value.trim() || null,
-        status: 'new',
-        by: ME,
-        created_at: serverTimestamp(),
+      const game = document.getElementById('igame').value;
+      const headline = document.getElementById('iheadline').value.trim() || null;
+      const note = document.getElementById('inote').value.trim() || null;
+      // 1) เก็บภาพ inspiration (imageB64) ไว้ให้ agent ดึงไปแกะ
+      const ideaRef = await addDoc(collection(db,'poster-ideas'), {
+        imageB64: IDEA_DATAURL, game, headline, note,
+        status: 'queued', by: ME, created_at: serverTimestamp(),
       });
-      toast('ส่งเข้า Dojo แล้ว ✓ — เดี๋ยว Dojo จะแกะภาพนี้');
+      // 2) dispatch งานด่วนเข้า executor (priority สูง → แซงคิว practice) → แกะ+เจน+push กลับหน้ารีวิว
+      const name = `insp-${game}-${Date.now().toString(36)}`;
+      const task = [
+        'งานด่วนที่สุด (Champ ส่ง inspiration มา อยากได้โพสสไตล์นี้เร็วที่สุด — ทำก่อนงานอื่นในคิว). ทำ autonomous.',
+        `ชื่อโพส: ${name}  ·  เกม: ${game}  ·  หัวข้อ: ${headline || '(เลือกให้เหมาะกับร้าน)'}`,
+        note ? `โน้ตจาก Champ (ชอบอะไร/อยากให้แกะอะไร): "${note}"` : '',
+        `1. ดึงภาพ inspiration: อ่าน field imageB64 จาก Firestore doc poster-ideas/${ideaRef.id} (ใช้ service-account ~/Projects/up-level-leaderboard/service-account.json, node LTS) → decode base64 → save inspo/${name}.jpg → เปิดดูภาพจริงด้วย Read tool.`,
+        '2. แกะสไตล์ (deconstruct): layout, โทนสี, typography, การจัดวางการ์ด/ฮีโร่, effect (neon/glow/shadow/reflection), mood — จดเป็น brief. เทียบ RUBRIC.md.',
+        `3. สร้าง practice/${name}.html เลียนสไตล์นั้น ตาม ~/Projects/poster-dojo/PRACTICE.md (ใช้ข้อมูลจริง: การ์ด/ราคา/event ข้อ 2, ห้าม placeholder หลุด, Kanit ทุกจุดไทย, footer 4 contact).`,
+        `4. bash render.sh practice/${name}.html practice/${name}.png`,
+        `5. node review.mjs practice/${name}.png --model=qwen2.5vl:7b → แก้จนผ่าน (สูงสุด 3 รอบ) → เซฟ lessons/${name}.json`,
+        `6. FIREBASE_KEY_PATH=~/Projects/up-level-leaderboard/service-account.json node firestore-sync.mjs push practice/${name}.png → จะขึ้นบนสุดของหน้ารีวิว "รอรีวิว" อัตโนมัติ (created_at ล่าสุด).`,
+        `7. set poster-ideas/${ideaRef.id} status='done' + posterName='${name}'.`,
+      ].filter(Boolean).join('\n');
+      await addDoc(collection(db,'claude-tasks'), {
+        task, project:'poster-dojo', status:'pending', source:'inspire', priority:10,
+        ideaId:ideaRef.id, posterName:name, game, created_by:ME, created_at:serverTimestamp(),
+      });
+      toast('ส่งเข้า Dojo แล้ว ✓ — แกะด่วน เดี๋ยวโผล่บนสุดหน้ารีวิว 🥋');
       IDEA_DATAURL = null;
       document.getElementById('ifile').value = '';
       document.getElementById('iheadline').value = '';
