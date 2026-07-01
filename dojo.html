@@ -291,6 +291,7 @@ function initInspo(){
         `5. node review.mjs practice/${name}.png --model=qwen2.5vl:7b → แก้จนผ่าน (สูงสุด 3 รอบ) → เซฟ lessons/${name}.json`,
         `6. FIREBASE_KEY_PATH=~/Projects/up-level-leaderboard/service-account.json node firestore-sync.mjs push practice/${name}.png → จะขึ้นบนสุดของหน้ารีวิว "รอรีวิว" อัตโนมัติ (created_at ล่าสุด).`,
         `7. set poster-ideas/${ideaRef.id} status='done' + posterName='${name}'.`,
+        `8. ส่งรูปเข้า Telegram ให้ Champ ดู: อ่าน TELEGRAM_BOT_TOKEN + TELEGRAM_OWNER_CHAT_ID จาก ~/Projects/vera-telegram/.env → curl -sf "https://api.telegram.org/bot<TOKEN>/sendPhoto" -d chat_id=<CHAT> --data-urlencode photo="<imageUrl จาก push ข้อ 6>" --data-urlencode caption="🥋 Dojo แกะ inspiration เสร็จ (${name}) เกรด <grade>/100 → ขึ้นหน้ารีวิวแล้ว".`,
       ].filter(Boolean).join('\n');
       await addDoc(collection(db,'claude-tasks'), {
         task, project:'poster-dojo', status:'pending', source:'inspire', priority:10,
