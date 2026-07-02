@@ -1383,12 +1383,14 @@ window.loadOps = function loadOps() {
       return `<div class="space-y-3">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${fresh?'bg-emerald-500':'bg-gray-600'}"></span><span class="text-white font-semibold text-sm">${m.id||d.id}</span><span class="text-[10px] text-gray-500">${m.cpu_model||''} · ${m.cpu_cores||'?'} core</span></div>
-          <span class="text-[10px] text-gray-500">up ${m.uptime_h||0}h · load ${m.load_1m??'?'}</span>
+          ${(() => { const b = m.busy ?? (m.cpu_pct>=25); return `<span class="text-[10px] px-2 py-0.5 rounded-full ${b?'bg-emerald-900/50 text-emerald-300':'bg-gray-800 text-gray-500'}">${b?'🟢 ทำงานอยู่':'💤 ว่าง'}</span>`; })()}
         </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div><div class="flex justify-between text-[11px] mb-1"><span class="text-gray-400">RAM</span><span class="text-gray-300">${m.ram_used_gb}/${m.ram_total_gb} GB · ${m.ram_pct}%</span></div>${bar(m.ram_pct)}</div>
-          <div><div class="flex justify-between text-[11px] mb-1"><span class="text-gray-400">Disk</span><span class="text-gray-300">${m.disk?.free_gb} GB free · ${m.disk?.pct}%</span></div>${bar(m.disk?.pct||0)}</div>
+        <div class="grid grid-cols-3 gap-3">
+          <div><div class="flex justify-between text-[11px] mb-1"><span class="text-gray-400">CPU ใช้งาน</span><span class="text-gray-300">${m.cpu_pct??'?'}%</span></div>${bar(m.cpu_pct??0)}</div>
+          <div><div class="flex justify-between text-[11px] mb-1"><span class="text-gray-400">RAM ใช้จริง</span><span class="text-gray-300">${m.mem_used_pct ?? m.ram_pct}%</span></div>${bar(m.mem_used_pct ?? m.ram_pct)}</div>
+          <div><div class="flex justify-between text-[11px] mb-1"><span class="text-gray-400">Disk</span><span class="text-gray-300">${m.disk?.pct}%</span></div>${bar(m.disk?.pct||0)}</div>
         </div>
+        <div class="text-[10px] text-gray-500">up ${m.uptime_h||0}h · load ${m.load_1m??'?'} · RAM ${m.ram_used_gb}/${m.ram_total_gb} GB (รวม cache)</div>
         <div class="flex flex-wrap gap-1.5 pt-1">${svc}</div>
       </div>`;
     }).join('<div class="border-t border-gray-800 my-3"></div>');
