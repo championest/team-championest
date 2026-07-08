@@ -362,6 +362,8 @@ function render(){
           <span class="text-[10px] px-1.5 py-0.5 rounded bg-${stC[st]||'gray'}-900/40 text-${stC[st]||'gray'}-300 ml-1${st==='reworking'?' animate-pulse':''}">${esc(stLabel(st,p))}</span>
           <div class="text-xs text-gray-400">${p.grade??'-'}/100</div></div>
         </div>
+        <a href="https://uplevel-poster-editor.vercel.app/?dojo=${encodeURIComponent(p.name||id)}" target="_blank" rel="noopener"
+           class="inline-flex items-center gap-1.5 text-[11px] bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 rounded-lg px-2.5 py-1.5 transition">🎨 เปิดในเทมเพลต <span class="text-indigo-500/70">→ แก้เอง</span></a>
         ${reworkBanner}
         ${fails?`<div class="space-y-1 border-t border-gray-800/60 pt-2">${fails}</div>`:''}
         ${champ}
