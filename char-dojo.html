@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Character Dojo — ตรวจตัวละคร</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { font-family: 'Inter', sans-serif; }
+  body { background:#0b0e14; }
+  .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#1a1f2e;border:1px solid;border-radius:12px;padding:10px 16px;color:#fff;font-size:13px;z-index:60;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+  ::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:#2a3142;border-radius:4px}
+  .annot-wrap img{display:block}
+  .annot-layer{position:absolute;inset:0;border-radius:12px}
+  .annot-layer.active{cursor:crosshair;background:rgba(251,191,36,.06)}
+  .annot-box{position:absolute;border:2px solid #fbbf24;background:rgba(251,191,36,.15);border-radius:4px;pointer-events:none}
+  .annot-box span{position:absolute;top:-8px;left:-8px;width:16px;height:16px;background:#fbbf24;color:#000;font-size:10px;font-weight:700;border-radius:50%;display:grid;place-items:center}
+  .sheet{background:#fff}
+</style>
+</head>
+<body class="text-gray-200">
+
+<!-- LOGIN GATE -->
+<div id="gate" class="fixed inset-0 flex items-center justify-center z-50 px-4" style="background:radial-gradient(circle at 50% 30%,#141a2e,#0b0e14)">
+  <div class="text-center max-w-sm w-full">
+    <div class="text-5xl mb-3">🎨</div>
+    <h1 class="text-2xl font-bold text-white">Character Dojo</h1>
+    <p class="text-sm text-gray-400 mt-1 mb-6">ตรวจตัวละคร · สั่งแก้ · วนจนสวย</p>
+    <button id="signin" class="w-full bg-white text-gray-800 font-semibold rounded-xl py-3 flex items-center justify-center gap-2 hover:opacity-90">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38z"/></svg>
+      เข้าสู่ระบบด้วย Google
+    </button>
+    <p id="gate-msg" class="text-xs text-rose-400 mt-4 hidden"></p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden max-w-5xl mx-auto px-3 py-4">
+  <header class="flex items-center justify-between mb-3 sticky top-0 bg-[#0b0e14]/95 backdrop-blur py-2 z-30">
+    <div>
+      <h1 class="text-lg font-bold text-white flex items-center gap-2">🎨 Character Dojo</h1>
+      <p class="text-[11px] text-gray-500" id="progress">กำลังโหลด…</p>
+    </div>
+    <div class="text-right">
+      <div id="me" class="text-[11px] text-gray-400"></div>
+      <button id="signout" class="text-[11px] text-gray-500 hover:text-gray-300 underline">ออกจากระบบ</button>
+    </div>
+  </header>
+
+  <div class="flex items-center gap-1.5 text-[11px] mb-3 flex-wrap" id="filter">
+    <button data-f="pending" class="fbtn px-3 py-1.5 rounded-full bg-amber-500 text-gray-900 font-semibold">รอตรวจ <span id="cnt-pending"></span></button>
+    <button data-f="redo" class="fbtn px-3 py-1.5 rounded-full bg-gray-800 text-gray-400">🔧 กำลังวาดใหม่ <span id="cnt-redo"></span></button>
+    <button data-f="approved" class="fbtn px-3 py-1.5 rounded-full bg-gray-800 text-gray-400">ผ่าน <span id="cnt-ok"></span></button>
+    <button data-f="all" class="fbtn px-3 py-1.5 rounded-full bg-gray-800 text-gray-400">ทั้งหมด</button>
+    <select id="grp" class="ml-auto bg-gray-800 border border-gray-700/50 rounded-full px-3 py-1.5 text-[11px] text-gray-300">
+      <option value="">ทุกชุด</option><option value="disney">Disney</option><option value="pokemon">Pokémon</option>
+    </select>
+  </div>
+
+  <div id="grid" class="grid sm:grid-cols-2 gap-3"><div class="text-gray-600 text-sm">Loading…</div></div>
+  <div class="text-center text-gray-700 text-[11px] py-6">Up Level · Character Dojo</div>
+</div>
+
+<div id="toast-wrap"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, collection, doc, query, orderBy, limit, onSnapshot, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAKxWv3FI7HrdrRlnJhsQbJ-97Pb_sdiOQ",
+  authDomain: "up-level-guild.firebaseapp.com",
+  projectId: "up-level-guild",
+  storageBucket: "up-level-guild.firebasestorage.app",
+  messagingSenderId: "721710985300",
+  appId: "1:721710985300:web:c51e13963373a6feadbdc1"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const REVIEWERS = new Set([
+  'champ.championest@gmail.com', 'namenrw@gmail.com', 'kittibhonlim@gmail.com', 'chawanut.cha@gmail.com',
+  'boomboom08755@gmail.com', 'nuslove2560@gmail.com', 'phooreephat.k@gmail.com',
+]);
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ago = ts => { if(!ts) return ''; const d=ts.toDate?ts.toDate():new Date(ts); const s=Math.floor((Date.now()-d)/1000); if(s<60)return s+'s'; if(s<3600)return Math.floor(s/60)+'m'; if(s<86400)return Math.floor(s/3600)+'h'; return Math.floor(s/86400)+'d'; };
+const toast = (m,c='#34d399') => { const t=document.createElement('div'); t.className='toast'; t.style.borderColor=c; t.textContent=m; document.getElementById('toast-wrap').appendChild(t); setTimeout(()=>t.remove(),3200); };
+
+let ME = null, DOCS = [], FILTER = 'pending', GROUP = '', pendingRender = false;
+const drafts = {};
+// A live snapshot mid-typing would wipe the textarea, so re-render is deferred while
+// Champ is writing and replayed when the field loses focus.
+const typing = () => { const a=document.activeElement; return a && a.tagName==='TEXTAREA' && a.id?.startsWith('dc-'); };
+window.draft = (id,v) => { drafts[id]=v; };
+
+// ── auth ──
+document.getElementById('signin').onclick = async () => {
+  const p = new GoogleAuthProvider(); p.setCustomParameters({ prompt:'select_account' });
+  try { await signInWithPopup(auth, p); }
+  catch(e){ if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'){ try{await signInWithRedirect(auth,p);}catch(_){}}
+    else if(e.code==='auth/unauthorized-domain'){ gateMsg('โดเมนนี้ยังไม่อนุญาตใน Firebase Auth — แจ้ง Champ'); }
+    else if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request'){ gateMsg('login ไม่สำเร็จ: '+(e.code||'error')); } }
+};
+document.getElementById('signout').onclick = () => signOut(auth);
+getRedirectResult(auth).catch(()=>{});
+function gateMsg(m){ const e=document.getElementById('gate-msg'); e.textContent=m; e.classList.remove('hidden'); }
+
+onAuthStateChanged(auth, user => {
+  if (user && REVIEWERS.has((user.email||'').toLowerCase())) {
+    ME = user.email;
+    document.getElementById('gate').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    document.getElementById('me').textContent = '🟢 ' + user.email;
+    start();
+  } else if (user) {
+    gateMsg('เมล ' + user.email + ' ไม่มีสิทธิ์ — ติดต่อ Champ');
+    setTimeout(()=>signOut(auth), 100);
+  } else {
+    document.getElementById('app').classList.add('hidden');
+    document.getElementById('gate').classList.remove('hidden');
+  }
+});
+
+let started = false;
+function start(){
+  if (started) return; started = true;
+  document.querySelectorAll('.fbtn').forEach(b => b.onclick = () => {
+    FILTER = b.dataset.f;
+    document.querySelectorAll('.fbtn').forEach(x=>x.className='fbtn px-3 py-1.5 rounded-full bg-gray-800 text-gray-400');
+    b.className='fbtn px-3 py-1.5 rounded-full bg-amber-500 text-gray-900 font-semibold';
+    render();
+  });
+  document.getElementById('grp').onchange = e => { GROUP = e.target.value; render(); };
+  document.getElementById('grid').addEventListener('focusout', () => { if(pendingRender) setTimeout(()=>{ if(!typing()) render(); }, 150); });
+
+  onSnapshot(query(collection(db,'character-dojo'), orderBy('updated_at','desc'), limit(400)), snap => {
+    DOCS = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    const n = s => DOCS.filter(d => (d.status||'pending')===s).length;
+    document.getElementById('cnt-pending').textContent = n('pending') ? `(${n('pending')})` : '';
+    document.getElementById('cnt-redo').textContent = n('redo') ? `(${n('redo')})` : '';
+    document.getElementById('cnt-ok').textContent = n('approved') ? `(${n('approved')})` : '';
+    document.getElementById('progress').textContent =
+      `วาดแล้ว ${DOCS.length} ตัว · ผ่าน ${n('approved')} · รอตรวจ ${n('pending')}`;
+    if (typing()) { pendingRender = true; } else render();
+  }, e => { document.getElementById('grid').innerHTML = `<div class="text-rose-400 text-sm">โหลดไม่ได้: ${esc(e.code||e.message)}</div>`; });
+}
+
+function render(){
+  pendingRender = false;
+  const grid = document.getElementById('grid');
+  let docs = DOCS;
+  if (FILTER !== 'all') docs = docs.filter(d => (d.status||'pending')===FILTER);
+  if (GROUP) docs = docs.filter(d => d.group===GROUP);
+  if (!docs.length) { grid.innerHTML = `<div class="text-gray-600 text-sm py-8 text-center col-span-full">ไม่มีตัวละครในหมวดนี้ 🎉</div>`; return; }
+  const stC = { pending:'amber', approved:'emerald', redo:'violet' };
+  const stLabel = d => d.status==='redo' ? `🔧 กำลังวาดใหม่` : d.status==='approved' ? '✅ ผ่าน' : 'รอตรวจ';
+
+  grid.innerHTML = docs.map(d => {
+    const id=d.id, st=d.status||'pending', locked=(st!=='pending');
+    const img = d.imageUrl
+      ? `<img src="${esc(d.imageUrl)}" loading="lazy" class="w-full sheet rounded-xl block">`
+      : `<div class="aspect-square rounded-xl bg-gray-800 grid place-items-center text-gray-600 text-xs">no image</div>`;
+    const imgBlock = (!locked && d.imageUrl) ? `
+      <div class="annot-wrap relative" data-id="${id}">${img}<div class="annot-layer" id="al-${id}" data-id="${id}"></div></div>
+      <button type="button" onclick="penToggle('${id}',this)" class="mt-1.5 w-full text-[11px] bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 rounded-lg py-1.5 transition">✏️ วงจุดที่ต้องแก้</button>
+      <div id="an-${id}" class="mt-1.5 space-y-1"></div>` : `<div>${img}</div>`;
+    const notes = (d.notes_all||[]).length
+      ? `<details class="text-[11px] text-gray-500"><summary class="cursor-pointer">เคยสั่งแก้ ${d.notes_all.length} ครั้ง</summary>
+         <div class="mt-1 space-y-1">${d.notes_all.map(n=>`<div class="text-gray-400 bg-gray-800/50 rounded px-2 py-1">💬 ${esc(n)}</div>`).join('')}</div></details>`
+      : '';
+    return `<div class="bg-gray-900/60 border border-gray-800/60 rounded-2xl p-3 space-y-2">
+      <div>${imgBlock}</div>
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <div class="text-sm font-semibold text-gray-100 truncate">${esc(d.subject||id)}</div>
+          <div class="text-[10px] text-gray-500">${esc([d.group, 'รอบ '+(d.round||1), d.updated_at?ago(d.updated_at)+' ที่แล้ว':''].filter(Boolean).join(' · '))}</div>
+        </div>
+        <span class="text-[10px] px-1.5 py-0.5 rounded shrink-0 bg-${stC[st]||'gray'}-900/40 text-${stC[st]||'gray'}-300${st==='redo'?' animate-pulse':''}">${stLabel(d)}</span>
+      </div>
+      ${notes}
+      ${locked?'':`<div class="space-y-2 border-t border-gray-800/60 pt-2">
+        <textarea id="dc-${id}" rows="2" oninput="draft('${id}',this.value)" placeholder="บอกว่าต้องแก้อะไร เช่น หูใหญ่ไป / สีเข้มไป / ไม่เหมือนตัวจริง" class="w-full bg-gray-800/70 border border-gray-700/50 rounded-lg px-2.5 py-2 text-xs text-gray-200 placeholder-gray-600 resize-none focus:outline-none focus:border-indigo-500/60">${esc(drafts[id]||'')}</textarea>
+        <div class="flex gap-2">
+          <button onclick="submit('${id}','approved')" class="flex-1 bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg py-2">✅ ผ่าน</button>
+          <button onclick="submit('${id}','redo')" class="flex-1 bg-amber-600/80 hover:bg-amber-600 text-white text-xs font-medium rounded-lg py-2">🔁 วาดใหม่</button>
+        </div></div>`}
+    </div>`;
+  }).join('');
+  docs.forEach(d => { if (ANNOT[d.id]?.length) redrawAnnot(d.id); });
+}
+
+// ── ✏️ ปากกาวง ────────────────────────────────
+const ANNOT = {};            // id → [{x,y,w,h,note}] (normalized 0-1)
+window.ANNOT = ANNOT;        // inline handlers run in global scope
+let _penId = null, _drawing = null;
+window.penToggle = function(id, btn) {
+  const on = _penId !== id;
+  _penId = on ? id : null;
+  document.querySelectorAll('.annot-layer').forEach(l => l.classList.toggle('active', l.dataset.id===_penId));
+  document.querySelectorAll('[onclick^="penToggle"]').forEach(b => b.classList.remove('ring-2','ring-amber-400'));
+  if (on) { btn.classList.add('ring-2','ring-amber-400'); btn.textContent='✏️ กำลังวง — ลากบนรูป (กดอีกครั้งเพื่อหยุด)'; }
+  else { btn.textContent='✏️ วงจุดที่ต้องแก้'; }
+};
+function layerXY(layer, e){ const r=layer.getBoundingClientRect(); return { x:(e.clientX-r.left)/r.width, y:(e.clientY-r.top)/r.height }; }
+document.addEventListener('pointerdown', e => {
+  const layer = e.target.closest('.annot-layer.active'); if (!layer) return;
+  e.preventDefault(); const p = layerXY(layer, e);
+  _drawing = { id:layer.dataset.id, x0:p.x, y0:p.y, el:document.createElement('div') };
+  _drawing.el.className='annot-box'; layer.appendChild(_drawing.el);
+});
+document.addEventListener('pointermove', e => {
+  if (!_drawing) return; const layer=document.getElementById('al-'+_drawing.id); const p=layerXY(layer,e);
+  const x=Math.min(p.x,_drawing.x0), y=Math.min(p.y,_drawing.y0), w=Math.abs(p.x-_drawing.x0), h=Math.abs(p.y-_drawing.y0);
+  Object.assign(_drawing.el.style,{left:x*100+'%',top:y*100+'%',width:w*100+'%',height:h*100+'%'});
+  _drawing.box={x,y,w,h};
+});
+document.addEventListener('pointerup', () => {
+  if (!_drawing) return; const d=_drawing; _drawing=null;
+  if (!d.box || d.box.w<0.02 || d.box.h<0.02) { d.el.remove(); return; }   // ignore a stray tap
+  (ANNOT[d.id] = ANNOT[d.id]||[]).push({ ...d.box, note:'' });
+  redrawAnnot(d.id);
+});
+window.redrawAnnot = redrawAnnot;
+function redrawAnnot(id){
+  const layer=document.getElementById('al-'+id), list=document.getElementById('an-'+id), arr=ANNOT[id]||[];
+  if (layer) layer.innerHTML = arr.map((a,i)=>`<div class="annot-box" style="left:${a.x*100}%;top:${a.y*100}%;width:${a.w*100}%;height:${a.h*100}%"><span>${i+1}</span></div>`).join('');
+  if (list) list.innerHTML = arr.map((a,i)=>`<div class="flex items-center gap-1.5"><span class="text-[10px] w-4 h-4 grid place-items-center rounded-full bg-amber-400 text-black font-bold shrink-0">${i+1}</span><input value="${esc(a.note||'')}" oninput="ANNOT['${id}'][${i}].note=this.value" placeholder="จุดนี้แก้อะไร…" class="flex-1 bg-gray-800/70 border border-gray-700/50 rounded px-2 py-1 text-[11px] text-gray-200 placeholder-gray-600 focus:outline-none focus:border-amber-500/60"><button onclick="ANNOT['${id}'].splice(${i},1);redrawAnnot('${id}')" class="text-gray-500 hover:text-rose-400 text-xs px-1">✕</button></div>`).join('');
+}
+// A box means nothing to a text prompt, so it is written out as a position in words.
+function annotList(id){
+  return (ANNOT[id]||[]).map(a => {
+    const cx=a.x+a.w/2, cy=a.y+a.h/2;
+    const v=cy<0.34?'ด้านบน':cy>0.66?'ด้านล่าง':'ตรงกลาง', h=cx<0.34?'ซ้าย':cx>0.66?'ขวา':'';
+    const where=(v==='ตรงกลาง'&&!h)?'กลางภาพ':`${v}${h?' '+h:''}`;
+    return { ...a, text:`บริเวณ${where}ของภาพ: ${a.note||'ต้องแก้ตรงนี้'}` };
+  });
+}
+
+window.submit = async (id, status) => {
+  const comment=(document.getElementById('dc-'+id)?.value||'').trim();
+  const annots = annotList(id);
+  if (status==='redo' && !comment && !annots.length) {
+    toast('พิมพ์บอก หรือ ✏️ วงจุดบนรูปก่อน แล้วค่อยกดวาดใหม่ 🔁', '#fbbf24');
+    document.getElementById('dc-'+id)?.focus(); return;
+  }
+  delete drafts[id];
+  try {
+    // The mini worker polls for status 'redo' and redraws with these notes folded in.
+    await updateDoc(doc(db,'character-dojo',id), status==='redo'
+      ? { status:'redo', champ_note:comment||null, annotations:annots, reviewed_by:ME, reviewed_at:serverTimestamp(), updated_at:serverTimestamp() }
+      : { status:'approved', champ_note:comment||null, reviewed_by:ME, reviewed_at:serverTimestamp(), updated_at:serverTimestamp() });
+    delete ANNOT[id];
+    toast(status==='approved' ? 'ผ่านแล้ว ✅' : 'ส่งวาดใหม่แล้ว 🔧 — เดี๋ยวกลับมาให้ตรวจ');
+  } catch(e){ toast('error: '+(e.code||e.message), '#f87171'); }
+};
+</script>
+</body>
+</html>
