@@ -158,6 +158,28 @@ let ME = null, DOCS = [], FILTER = 'pending', pendingRender = false;
 const drafts = {};
 const typing = () => { const a=document.activeElement; return a && a.tagName==='TEXTAREA' && a.id?.startsWith('dc-'); };
 window.draft = (id,v) => { drafts[id]=v; };
+// 🗑 ลบทิ้ง: ใบแย่มาก ไม่ต้องวนแก้ → status 'rejected' + เหตุผล → practice loop อ่าน (firestore-sync rejects) แล้วหลบสไตล์นั้น
+const REJECT_CHIPS = ['ดูเป็นงาน AI','รก/แน่นเกิน','ตัวหนังสืออ่านยาก','รูปแหว่ง/ทับกัน','สีไม่สวย','ซ้ำแบบเดิม','ไม่ว้าว'];
+window.chip = (id, btn) => {
+  const ta=document.getElementById('dc-'+id); const t=btn.textContent;
+  const parts=(ta.value||'').split(' · ').map(x=>x.trim()).filter(Boolean);
+  const i=parts.indexOf(t); if(i>=0) parts.splice(i,1); else parts.push(t);
+  ta.value=parts.join(' · '); drafts[id]=ta.value;
+  btn.classList.toggle('bg-rose-600/30', i<0); btn.classList.toggle('text-rose-200', i<0);
+};
+window.rejectPoster = async (id) => {
+  const p=DOCS.find(x=>x.id===id)||{};
+  const reason=(document.getElementById('dc-'+id)?.value||'').trim();
+  const prev=p.status||'pending';
+  try {
+    await updateDoc(doc(db,'poster-dojo',id), { status:'rejected', prev_status:prev, reject_reason:reason||null, reviewed_by:ME, reviewed_at:serverTimestamp() });
+    delete drafts[id];
+    const t=document.createElement('div'); t.className='toast'; t.style.borderColor='#f87171';
+    t.innerHTML='🗑 ลบทิ้งแล้ว — จะทำสไตล์อื่นแทน <button class="ml-2 underline text-rose-300">เลิกทำ</button>';
+    t.querySelector('button').onclick=async()=>{ await updateDoc(doc(db,'poster-dojo',id),{status:prev,reject_reason:null}); t.remove(); toast('เอากลับมาแล้ว'); };
+    document.getElementById('toast-wrap').appendChild(t); setTimeout(()=>t.remove(),7000);
+  } catch(e){ toast('error: '+(e.code||e.message), '#f87171'); }
+};
 
 // ── auth ──
 document.getElementById('signin').onclick = async () => {
@@ -337,7 +359,7 @@ function render(){
   docs = docs.slice().sort((a,b) => ms(b) - ms(a));
   if (!docs.length) { grid.innerHTML = `<div class="text-gray-600 text-sm py-8 text-center">ไม่มีโพสในหมวด "${FILTER}" 🎉</div>`; return; }
   const vC = v => ({PASS:'emerald',REVISE:'amber',REJECT:'rose'}[v]||'gray');
-  const stC = { pending:'amber', approved:'emerald', revise:'sky', reworking:'violet' };
+  const stC = { pending:'amber', approved:'emerald', revise:'sky', reworking:'violet', rejected:'rose' };
   const stLabel = (st,p) => st==='reworking' ? `🔧 กำลังแก้${p.rework_round?' รอบ '+p.rework_round:''}` : st==='revise' ? '🔁 รอแก้' : st;
 
   grid.innerHTML = docs.map(p => {
@@ -368,12 +390,14 @@ function render(){
         ${fails?`<div class="space-y-1 border-t border-gray-800/60 pt-2">${fails}</div>`:''}
         ${champ}
         ${done?'':`<div class="space-y-2 border-t border-gray-800/60 pt-2">
-          <textarea id="dc-${id}" rows="2" oninput="draft('${id}',this.value)" placeholder="คอมเมนต์ (จะเป็นกฎใน RUBRIC ถ้าติ๊ก)" class="w-full bg-gray-800/70 border border-gray-700/50 rounded-lg px-2.5 py-2 text-xs text-gray-200 placeholder-gray-600 resize-none focus:outline-none focus:border-indigo-500/60">${esc(drafts[id]||'')}</textarea>
+          <textarea id="dc-${id}" rows="2" oninput="draft('${id}',this.value)" placeholder="คอมเมนต์ / ไม่ชอบเพราะอะไร (กดลบทิ้ง = ไม่แก้ใบนี้ ทำสไตล์อื่นแทน)" class="w-full bg-gray-800/70 border border-gray-700/50 rounded-lg px-2.5 py-2 text-xs text-gray-200 placeholder-gray-600 resize-none focus:outline-none focus:border-indigo-500/60">${esc(drafts[id]||'')}</textarea>
           <label class="flex items-center gap-2 text-[11px] text-gray-400 cursor-pointer"><input type="checkbox" id="dr-${id}" class="accent-indigo-500"> เพิ่มเป็นกฎใน RUBRIC
             <select id="ds-${id}" class="ml-auto bg-gray-800 border border-gray-700/50 rounded px-1 py-0.5 text-[11px]"><option value="🟡">🟡 major</option><option value="🔴">🔴 critical</option><option value="🟢">🟢 minor</option></select></label>
+          <div class="flex flex-wrap gap-1.5">${REJECT_CHIPS.map(c=>`<button type="button" onclick="chip('${id}',this)" class="text-[11px] px-2.5 py-1.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700/50 hover:border-rose-500/50">${c}</button>`).join('')}</div>
           <div class="flex gap-2">
-            <button onclick="submit('${id}','approved')" class="flex-1 bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg py-2">✅ ผ่าน</button>
-            <button onclick="submit('${id}','revise')" class="flex-1 bg-amber-600/80 hover:bg-amber-600 text-white text-xs font-medium rounded-lg py-2">🔁 ให้แก้</button>
+            <button onclick="submit('${id}','approved')" class="flex-1 bg-emerald-600/80 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg py-2.5">✅ ผ่าน</button>
+            <button onclick="submit('${id}','revise')" class="flex-1 bg-amber-600/80 hover:bg-amber-600 text-white text-xs font-medium rounded-lg py-2.5">🔁 ให้แก้</button>
+            <button onclick="rejectPoster('${id}')" class="flex-1 bg-rose-600/80 hover:bg-rose-600 text-white text-xs font-medium rounded-lg py-2.5">🗑 ลบทิ้ง</button>
           </div></div>`}
       </div></div>`;
   }).join('');
