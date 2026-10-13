@@ -41,6 +41,7 @@
     <div>
       <h1 class="text-lg font-bold text-white flex items-center gap-2">🥋 Poster Dojo <span class="text-xs font-normal text-gray-500">รีวิว</span></h1>
       <p class="text-[11px] text-gray-500">คอมเมนต์ = กฎใหม่ใน RUBRIC · reviewer ฉลาดขึ้น</p>
+      <a href="dojo-run.html" class="inline-block mt-1 text-xs font-semibold text-amber-400 underline">สายพานทำโพส (ระบบใหม่) →</a>
     </div>
     <div class="text-right">
       <div id="me" class="text-[11px] text-gray-400"></div>
@@ -222,7 +223,7 @@ function start(){
   document.getElementById('grid').addEventListener('focusout', () => { if(pendingRender) setTimeout(()=>{ if(!typing()) render(); }, 150); });
 
   onSnapshot(query(collection(db,'poster-dojo'), orderBy('created_at','desc'), limit(200)), snap => {
-    DOCS = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    DOCS = snap.docs.map(d => ({ id:d.id, ...d.data() })).filter(d => d.kind !== 'run');  // runs live on dojo-run.html
     const isQueue = p => { const s=p.status||'pending'; return s==='pending'||s==='revise'; };  // "รอรีวิว" = ทุกใบยังไม่ผ่าน + ไม่ได้กำลังแก้
     const pc = DOCS.filter(isQueue).length;
     const rc = DOCS.filter(p => p.status==='reworking').length;
