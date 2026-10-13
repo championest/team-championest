@@ -66,6 +66,7 @@ header .sp{flex:1}
 .cand.picked .tag{background:var(--gold);color:#1a1205}
 .cand button{width:100%;min-height:40px;border:0;border-top:1px solid var(--line);background:var(--panel);font-size:13px;cursor:pointer}
 .cand.picked button{color:var(--gold)}
+.cand button.fork{color:#9fd3ff;border-top-style:dashed}
 .links{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
 .links a{color:var(--run);font-size:14px}
 .fix{margin-top:12px;border-top:1px dashed var(--line);padding-top:12px}
@@ -219,6 +220,7 @@ function render(){
   det.querySelectorAll('textarea[data-stage]').forEach(t => t.oninput = () => { drafts[CUR+'/'+t.dataset.stage]=t.value; saveDrafts(); });
   det.querySelectorAll('[data-redo]').forEach(b => b.onclick = () => redo(r, b.dataset.redo));
   det.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => redo(r, 'ref', Number(b.dataset.pick)));
+  det.querySelectorAll('[data-fork]').forEach(b => b.onclick = () => fork(r, Number(b.dataset.fork)));
   det.querySelectorAll('[data-zoom]').forEach(i => i.onclick = () => zoom(i.dataset.zoom));
   det.querySelectorAll('[data-proceed]').forEach(b => b.onclick = () => proceed(r, b.dataset.proceed));
   det.querySelectorAll('[data-act=approve]').forEach(b => b.onclick = () => approve(r));
@@ -241,7 +243,8 @@ function stageHtml(r, k, label, ic, s){
   const items = (s.items||[]).map(it => `<figure data-zoom="${esc(it.img)}"><img loading="lazy" src="${esc(it.img)}" alt="${esc(it.caption)}"><figcaption>${esc(it.caption)}</figcaption></figure>`).join('');
   const cands = (s.cands||[]).map((c,i) => { const n=i+1, on=s.picked===n;
     return `<div class="cand ${on?'picked':''}"><img loading="lazy" src="${esc(c.img)}" data-zoom="${esc(c.img)}" alt=""><span class="tag">${esc(c.caption||'#'+n)}</span>
-      <button data-pick="${n}" ${on?'disabled':''}>${on?'ใช้อันนี้อยู่':'ใช้อันนี้แทน'}</button></div>`; }).join('');
+      <button data-pick="${n}" ${on?'disabled':''}>${on?'ใช้อันนี้อยู่':'ใช้อันนี้แทน'}</button>
+      <button class="fork" data-fork="${n}" title="ทำอีกชิ้นจากรูปนี้ ทำพร้อมกันกับงานนี้ ไม่แตะงานเดิม">แยกเป็นงานใหม่</button></div>`; }).join('');
   const metrics = (s.metrics||[]).map(m => `<span class="metric">${esc(m.label)} <b>${esc(m.value)}</b></span>`).join('');
   const links = (s.links||[]).map(l => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>`).join('');
   const has = s.summary || items || cands || metrics;
@@ -254,7 +257,7 @@ function stageHtml(r, k, label, ic, s){
       ${s.summary?`<div class="summary">${esc(s.summary)}</div>`:''}
       ${metrics?`<div class="metrics">${metrics}</div>`:''}
       ${items?`<div class="imgs">${items}</div>`:''}
-      ${cands?`<div class="eyebrow" style="margin-top:14px">ตัวเลือก ref · กดเพื่อให้ทำใหม่จากรูปนั้น</div><div class="cands">${cands}</div>`:''}
+      ${cands?`<div class="eyebrow" style="margin-top:14px">ตัวเลือก ref · "ใช้อันนี้แทน" = ทำงานนี้ใหม่จากรูปนั้น · "แยกเป็นงานใหม่" = ทำอีกชิ้นคู่กันไป งานนี้ไม่เปลี่ยน</div><div class="cands">${cands}</div>`:''}
       ${links?`<div class="links">${links}</div>`:''}
       ${(s.status==='waiting'&&k!=='review'&&r.status!=='approved')?`<div class="note"><b>รอดูก่อนไปต่อ</b> — ถ้าเหมือนต้นแบบแล้วกดไปต่อ ถ้ายังไม่เหมือนพิมพ์บอกด้านล่าง<div class="row" style="margin-top:8px"><button class="btn ok" data-proceed="${k}"><i data-lucide="check"></i>เหมือนแล้ว ไปขั้นต่อไป</button></div></div>`:''}
       ${canFix?`<div class="fix"><textarea data-stage="${k}" placeholder="บอก Claude ว่าขั้นนี้ผิดตรงไหน หรือต้องเป็นแบบไหน">${esc(drafts[r.id+'/'+k]||'')}</textarea>
@@ -286,6 +289,25 @@ async function approve(r){
 function zoom(src){ const lb=document.getElementById('lightbox'); lb.querySelector('img').src=src; lb.classList.remove('hidden'); }
 document.getElementById('lightbox').onclick = e => e.currentTarget.classList.add('hidden');
 document.addEventListener('keydown', e => { if(e.key==='Escape') document.getElementById('lightbox').classList.add('hidden'); });
+
+// fork: same brief, another ref → a separate run that works in parallel (Champ 2026-10-13).
+// The original run is never touched; the new one starts at the copy stage with ref #n.
+async function fork(r, n){
+  const ref = r.stages?.ref || {}, c = (ref.cands||[])[n-1];
+  if (!c) return;
+  const d = new Date(), stamp = String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0')+String(d.getSeconds()).padStart(2,'0');
+  const name = (r.name||r.id.replace(/^run-/,'')).replace(/-f\d+$/,'')+'-f'+stamp;
+  const stages = {}; STAGES.forEach(([k,label],i) => stages[k] = {order:i+1,label,status:'todo',items:[]});
+  stages.ref = { ...ref, status:'done', picked:n, summary:`แยกมาจากงาน "${r.title||r.name}" · ใช้ ref #${n}` };
+  const note = `แยกจาก run "${r.name}" (งานเดิมยังทำต่อคู่กัน ห้ามแตะ) · ref = #${n} รูป ${c.img} (ดาวน์โหลดเป็น ref-full.jpg ขนาดเต็มที่สุดที่หาได้) · เนื้อหา/รูปสินค้าเหมือนงานเดิม: ${r.brief?.note||''}`;
+  try {
+    await setDoc(doc(db,'poster-dojo','run-'+name), { kind:'run', name, title:(r.title||r.name)+` · ref #${n}`, fork_of:r.id,
+      status:'continue', round:1, brief:{ ...(r.brief||{}), note }, stages,
+      log:[{stage:'ref',note:`แยกงานจาก ${r.name} ใช้ ref #${n}`,by:ME,at:Date.now()}],
+      created_by:ME, created_at:serverTimestamp(), updated_at:serverTimestamp() });
+    CUR='run-'+name; toast(`แยกงานแล้ว (ref #${n}) Claude จะเริ่มก็อปภายใน 1 นาที — งานเดิมยังทำต่อ`);
+  } catch(e){ toast('แยกงานไม่ได้: '+(e.code||e.message)); }
+}
 
 // new job
 const nm = document.getElementById('newmodal');
