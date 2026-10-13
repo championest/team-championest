@@ -74,6 +74,7 @@ header .sp{flex:1}
 .note{margin-top:10px;border:1px solid #6b4519;background:#2a1d0c;border-radius:12px;padding:10px 12px;font-size:14px}
 .note b{color:var(--warn);font-weight:500}
 .log{margin-top:26px}
+.prog{margin:8px 0 0}.prog .bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}.prog .bar span{display:block;height:100%;background:var(--gold);transition:width .6s}.prog small{color:var(--mute);font-size:13px}
 .log li{list-style:none;font-size:13px;color:var(--mute);padding:6px 0;border-bottom:1px solid var(--line)}
 .log li b{color:var(--text);font-weight:500}
 .empty{color:var(--mute);text-align:center;padding:40px 0}
@@ -205,14 +206,14 @@ function render(){
   const det = document.getElementById('detail');
   if (!r) { det.innerHTML = '<div class="empty">ยังไม่มีงาน กด "สั่งงานใหม่"</div>'; icons(); return; }
   const st = r.stages || {};
-  const redoBanner = (r.status==='redo'||r.status==='queued') && r.redo ? `<div class="note"><b>สั่งแก้แล้ว — ${esc(stageLabel(r.redo.from))}</b><br>${esc(r.redo.note||'')}${r.redo.pick!=null?` · ใช้ ref #${r.redo.pick}`:''}<br><small>${r.status==='queued'?'Claude รับงานแล้ว กำลังทำ':'รอ Claude รับงาน (ภายใน 1 นาที)'}</small></div>` : '';
+  const redoBanner = (r.status==='redo'||r.status==='queued') && r.redo && r.redo.from ? `<div class="note"><b>สั่งแก้แล้ว — ${esc(stageLabel(r.redo.from))}</b><br>${esc(r.redo.note||'')}${r.redo.pick!=null?` · ใช้ ref #${r.redo.pick}`:''}<br><small>${r.status==='queued'?'Claude รับงานแล้ว กำลังทำ':'รอ Claude รับงาน (ภายใน 1 นาที)'}</small></div>` : '';
   det.innerHTML = `<div class="head">
       <div class="eyebrow">${esc(r.brief?.job||'')} · รอบ ${esc(r.round||1)}</div>
       <h2>${esc(r.title||r.name)}</h2>
       <p>${r.brief?.query?'คำค้น: '+esc(r.brief.query):''}${r.brief?.note?' · '+esc(r.brief.note):''}</p>
       <div class="headrow"><span class="chip ${esc(r.status)}">${esc(STATUS_TH[r.status]||r.status)}</span>
         ${(r.status!=='approved'&&r.stages?.adapt?.status==='done')?`<button class="btn ok" data-act="approve"><i data-lucide="check"></i>ผ่าน ลงเทมเพลต</button>`:''}
-      </div>${redoBanner}</div>
+      </div>${liveLine(r)}${redoBanner}</div>
     ${STAGES.map(([k,label,ic]) => stageHtml(r, k, label, ic, st[k]||{status:'todo'})).join('')}
     ${(r.log||[]).length?`<div class="log"><div class="eyebrow">ประวัติการสั่ง</div><ul>${[...r.log].reverse().map(l=>`<li><b>${esc(stageLabel(l.stage))}</b> · ${esc(l.note||'')}${l.pick!=null?` · ใช้ #${l.pick}`:''} — ${esc((l.by||'').split('@')[0])} ${esc(l.at?new Date(l.at).toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'')}</li>`).join('')}</ul></div>`:''}`;
   det.querySelectorAll('textarea[data-stage]').forEach(t => t.oninput = () => { drafts[CUR+'/'+t.dataset.stage]=t.value; saveDrafts(); });
@@ -223,6 +224,17 @@ function render(){
   det.querySelectorAll('[data-act=approve]').forEach(b => b.onclick = () => approve(r));
   icons();
 }
+function liveLine(r){
+  const busy=['new','redo','queued','continue','running'].includes(r.status)||(r.status==='approved'&&r.live&&r.live.state!=='idle');
+  if(!busy) return '';
+  const L=r.live, now=Date.now(), sec=v=>{const s=Math.max(0,Math.round((now-v)/1000));return s<60?s+' วินาที':Math.floor(s/60)+' นาที';};
+  if(!L||L.state==='idle'||L.state==='pending') return `<div class="note" style="border-color:#244a74;background:#0f1b2b"><b style="color:var(--run)">รอคิว</b> — ระบบจะเริ่มภายในไม่กี่วินาที</div>`;
+  if(now-L.at>6*60000) return `<div class="note" style="border-color:#6d2730;background:#2a1014"><b style="color:var(--bad)">ไม่มีความเคลื่อนไหว ${sec(L.at)}</b> — อาจค้าง ถ้าเกิน 15 นาทีแจ้งแชมป์</div>`;
+  const cur=STAGES.find(([k])=>['running','redo'].includes(r.stages?.[k]?.status));
+  const p=cur?r.stages[cur[0]].progress:null;
+  return `<div class="note" style="border-color:#244a74;background:#0f1b2b"><b style="color:var(--run)">กำลังทำ${cur?' "'+cur[1]+'"':''}${p!=null?' '+p+'%':''}</b> · อัปเดตล่าสุด ${sec(L.at)}ที่แล้ว${L.started?' · ทำมาแล้ว '+sec(L.started):''}</div>`;
+}
+setInterval(()=>{ if(!typing()) render(); },10000);
 const stageLabel = k => (STAGES.find(s=>s[0]===k)||[k,k])[1];
 
 function stageHtml(r, k, label, ic, s){
@@ -237,6 +249,7 @@ function stageHtml(r, k, label, ic, s){
   return `<div class="stage ${esc(s.status||'todo')}">
     <div class="dot"><i data-lucide="${s.status==='done'?'check':ic}"></i></div>
     <div class="stitle"><h3>${s.order||STAGES.findIndex(x=>x[0]===k)+1}. ${esc(label)}</h3><span class="chip ${esc(s.status||'todo')}">${esc(STATUS_TH[s.status]||s.status||'ยังไม่ถึง')}</span><small style="color:var(--mute)">${esc(when(s.at))}</small></div>
+    ${(s.status==='running'||s.status==='redo')?`<div class="prog"><div class="bar"><span style="width:${s.progress??8}%"></span></div><small>${s.progress!=null?s.progress+'%':'กำลังเริ่ม'}${s.progress_note?' · '+esc(s.progress_note):''}</small></div>`:''}
     ${has||canFix?`<div class="sbody">
       ${s.summary?`<div class="summary">${esc(s.summary)}</div>`:''}
       ${metrics?`<div class="metrics">${metrics}</div>`:''}
@@ -258,12 +271,12 @@ async function redo(r, stage, pick){
   const patch = { status:'redo', redo:{ from:stage, note, by:ME, at:Date.now(), ...(pick!=null?{pick}:{}) },
     log: arrayUnion(entry), updated_at: serverTimestamp() };
   const i = STAGES.findIndex(s=>s[0]===stage);
-  STAGES.slice(i).forEach(([k]) => { if (r.stages?.[k]) patch[`stages.${k}.status`] = k===stage ? 'redo' : 'stale'; });
+  STAGES.forEach(([k,label],j) => { if (j<i || !r.stages?.[k]) return; if (k===stage) { patch[`stages.${k}.status`]='redo'; patch[`stages.${k}.progress`]=0; } else patch[`stages.${k}`]={order:j+1,label,status:'todo',items:[]}; });
   try { await updateDoc(doc(db,'poster-dojo',r.id), patch); delete drafts[r.id+'/'+stage]; saveDrafts(); toast('ส่งให้ Claude แล้ว จะทำต่อจาก '+stageLabel(stage)); }
   catch(e){ toast('ส่งไม่ได้: '+(e.code||e.message)); }
 }
 async function proceed(r, stage){
-  try { await updateDoc(doc(db,'poster-dojo',r.id), { status:'continue', [`stages.${stage}.status`]:'done', log:arrayUnion({stage,note:'ผ่านขั้นนี้ ไปต่อ',by:ME,at:Date.now()}), updated_at:serverTimestamp() }); toast('ไปขั้นต่อไปแล้ว'); }
+  try { await updateDoc(doc(db,'poster-dojo',r.id), { status:'continue', redo:null, [`stages.${stage}.status`]:'done', log:arrayUnion({stage,note:'ผ่านขั้นนี้ ไปต่อ',by:ME,at:Date.now()}), updated_at:serverTimestamp() }); toast('ไปขั้นต่อไปแล้ว'); }
   catch(e){ toast('บันทึกไม่ได้: '+(e.code||e.message)); }
 }
 async function approve(r){
