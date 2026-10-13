@@ -152,7 +152,7 @@ const app = initializeApp({
   projectId: "up-level-guild", storageBucket: "up-level-guild.firebasestorage.app",
   messagingSenderId: "721710985300", appId: "1:721710985300:web:c51e13963373a6feadbdc1" });
 const auth = getAuth(app), db = getFirestore(app);
-const REVIEWERS = new Set(['champ.championest@gmail.com','namenrw@gmail.com','kittibhonlim@gmail.com','chawanut.cha@gmail.com','boomboom08755@gmail.com','nuslove2560@gmail.com','phooreephat.k@gmail.com']);
+const REVIEWERS = new Set(['champ.championest@gmail.com','namenrw@gmail.com','kittibhonlim@gmail.com','chawanut.cha@gmail.com','boomboom08755@gmail.com','nuslove2560@gmail.com','phooreephat.k@gmail.com','sin.sirisa@gmail.com']);
 const STAGES = [['ref','หา ref','search'],['copy','ก็อปให้เหมือน','copy'],['adapt','เปลี่ยนเป็น Up Level','wand-sparkles'],['review','Claude ตรวจ','scan-eye'],['template','เก็บเป็นเทมเพลต','layout-template']];
 const STATUS_TH = {todo:'ยังไม่ถึง',running:'กำลังทำ',done:'เสร็จ',failed:'พัง',waiting:'รอแชมป์',stale:'รอทำใหม่',redo:'สั่งแก้แล้ว',queued:'เข้าคิว',new:'งานใหม่',approved:'ผ่านแล้ว'};
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -211,7 +211,7 @@ function render(){
       <h2>${esc(r.title||r.name)}</h2>
       <p>${r.brief?.query?'คำค้น: '+esc(r.brief.query):''}${r.brief?.note?' · '+esc(r.brief.note):''}</p>
       <div class="headrow"><span class="chip ${esc(r.status)}">${esc(STATUS_TH[r.status]||r.status)}</span>
-        ${r.status!=='approved'?`<button class="btn ok" data-act="approve"><i data-lucide="check"></i>ผ่าน ลงเทมเพลต</button>`:''}
+        ${(r.status!=='approved'&&r.stages?.adapt?.status==='done')?`<button class="btn ok" data-act="approve"><i data-lucide="check"></i>ผ่าน ลงเทมเพลต</button>`:''}
       </div>${redoBanner}</div>
     ${STAGES.map(([k,label,ic]) => stageHtml(r, k, label, ic, st[k]||{status:'todo'})).join('')}
     ${(r.log||[]).length?`<div class="log"><div class="eyebrow">ประวัติการสั่ง</div><ul>${[...r.log].reverse().map(l=>`<li><b>${esc(stageLabel(l.stage))}</b> · ${esc(l.note||'')}${l.pick!=null?` · ใช้ #${l.pick}`:''} — ${esc((l.by||'').split('@')[0])} ${esc(l.at?new Date(l.at).toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'')}</li>`).join('')}</ul></div>`:''}`;
@@ -219,6 +219,7 @@ function render(){
   det.querySelectorAll('[data-redo]').forEach(b => b.onclick = () => redo(r, b.dataset.redo));
   det.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => redo(r, 'ref', Number(b.dataset.pick)));
   det.querySelectorAll('[data-zoom]').forEach(i => i.onclick = () => zoom(i.dataset.zoom));
+  det.querySelectorAll('[data-proceed]').forEach(b => b.onclick = () => proceed(r, b.dataset.proceed));
   det.querySelectorAll('[data-act=approve]').forEach(b => b.onclick = () => approve(r));
   icons();
 }
@@ -242,6 +243,7 @@ function stageHtml(r, k, label, ic, s){
       ${items?`<div class="imgs">${items}</div>`:''}
       ${cands?`<div class="eyebrow" style="margin-top:14px">ตัวเลือก ref · กดเพื่อให้ทำใหม่จากรูปนั้น</div><div class="cands">${cands}</div>`:''}
       ${links?`<div class="links">${links}</div>`:''}
+      ${(s.status==='waiting'&&k!=='review'&&r.status!=='approved')?`<div class="note"><b>รอดูก่อนไปต่อ</b> — ถ้าเหมือนต้นแบบแล้วกดไปต่อ ถ้ายังไม่เหมือนพิมพ์บอกด้านล่าง<div class="row" style="margin-top:8px"><button class="btn ok" data-proceed="${k}"><i data-lucide="check"></i>เหมือนแล้ว ไปขั้นต่อไป</button></div></div>`:''}
       ${canFix?`<div class="fix"><textarea data-stage="${k}" placeholder="บอก Claude ว่าขั้นนี้ผิดตรงไหน หรือต้องเป็นแบบไหน">${esc(drafts[r.id+'/'+k]||'')}</textarea>
         <div class="row"><button class="btn pri" data-redo="${k}"><i data-lucide="rotate-ccw"></i>แก้ขั้นนี้ แล้วทำต่อจากตรงนี้</button></div></div>`:''}
     </div>`:''}
@@ -259,6 +261,10 @@ async function redo(r, stage, pick){
   STAGES.slice(i).forEach(([k]) => { if (r.stages?.[k]) patch[`stages.${k}.status`] = k===stage ? 'redo' : 'stale'; });
   try { await updateDoc(doc(db,'poster-dojo',r.id), patch); delete drafts[r.id+'/'+stage]; saveDrafts(); toast('ส่งให้ Claude แล้ว จะทำต่อจาก '+stageLabel(stage)); }
   catch(e){ toast('ส่งไม่ได้: '+(e.code||e.message)); }
+}
+async function proceed(r, stage){
+  try { await updateDoc(doc(db,'poster-dojo',r.id), { status:'continue', [`stages.${stage}.status`]:'done', log:arrayUnion({stage,note:'ผ่านขั้นนี้ ไปต่อ',by:ME,at:Date.now()}), updated_at:serverTimestamp() }); toast('ไปขั้นต่อไปแล้ว'); }
+  catch(e){ toast('บันทึกไม่ได้: '+(e.code||e.message)); }
 }
 async function approve(r){
   try { await updateDoc(doc(db,'poster-dojo',r.id), { status:'approved', approved_by:ME, log:arrayUnion({stage:'template',note:'ผ่าน ลงเทมเพลต',by:ME,at:Date.now()}), updated_at:serverTimestamp() }); toast('ผ่านแล้ว Claude จะลงเทมเพลตให้'); }
