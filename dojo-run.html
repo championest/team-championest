@@ -21,6 +21,9 @@ header .sp{flex:1}
 .btn.pri{background:var(--gold);border-color:var(--gold);color:#1a1205}
 .btn.ok{background:var(--ok);border-color:var(--ok);color:#06210f}
 .btn.ghost{background:transparent}
+.btn.del{background:transparent;border-color:#6d2730;color:var(--bad)}
+.btn.del.arm{background:var(--bad);border-color:var(--bad);color:#2a0a0e}
+.headrow{flex-wrap:wrap}
 .btn:disabled{opacity:.4;cursor:not-allowed}
 .btn svg{width:18px;height:18px}
 .chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px;border-radius:99px;border:1px solid var(--line);white-space:nowrap}
@@ -156,7 +159,7 @@ const app = initializeApp({
 const auth = getAuth(app), db = getFirestore(app);
 const REVIEWERS = new Set(['champ.championest@gmail.com','namenrw@gmail.com','kittibhonlim@gmail.com','chawanut.cha@gmail.com','boomboom08755@gmail.com','nuslove2560@gmail.com','phooreephat.k@gmail.com','sin.sirisa@gmail.com']);
 const STAGES = [['ref','หา ref','search'],['copy','ก็อปให้เหมือน','copy'],['adapt','เปลี่ยนเป็น Up Level','wand-sparkles'],['review','Claude ตรวจ','scan-eye'],['template','เก็บเป็นเทมเพลต','layout-template']];
-const STATUS_TH = {todo:'ยังไม่ถึง',running:'กำลังทำ',done:'เสร็จ',failed:'พัง',waiting:'รอแชมป์',stale:'รอทำใหม่',redo:'สั่งแก้แล้ว',queued:'เข้าคิว',new:'งานใหม่',approved:'ผ่านแล้ว'};
+const STATUS_TH = {deleted:'ลบแล้ว',todo:'ยังไม่ถึง',running:'กำลังทำ',done:'เสร็จ',failed:'พัง',waiting:'รอแชมป์',stale:'รอทำใหม่',redo:'สั่งแก้แล้ว',queued:'เข้าคิว',new:'งานใหม่',approved:'ผ่านแล้ว'};
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const when = t => { if(!t) return ''; const d = t.toDate ? t.toDate() : new Date(t); return d.toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); };
 const toast = m => { const t=document.createElement('div'); t.className='toast'; t.textContent=m; document.body.appendChild(t); setTimeout(()=>t.remove(),2800); };
@@ -188,7 +191,7 @@ function start(){
   if (started) return; started = true;
   const want = new URLSearchParams(location.search).get('run');
   onSnapshot(query(collection(db,'poster-dojo'), where('kind','==','run')), snap => {
-    RUNS = snap.docs.map(d => ({id:d.id, ...d.data()}))
+    RUNS = snap.docs.map(d => ({id:d.id, ...d.data()})).filter(r => r.status!=='deleted')
       .sort((a,b) => ((b.updated_at?.seconds||0) - (a.updated_at?.seconds||0)));
     if (!CUR || !RUNS.find(r=>r.id===CUR)) CUR = (want && RUNS.find(r=>r.id===want)) ? want : RUNS[0]?.id || null;
     if (typing()) { pending = true; return; }
@@ -214,6 +217,7 @@ function render(){
       <p>${r.brief?.query?'คำค้น: '+esc(r.brief.query):''}${r.brief?.note?' · '+esc(r.brief.note):''}</p>
       <div class="headrow"><span class="chip ${esc(r.status)}">${esc(STATUS_TH[r.status]||r.status)}</span>
         ${(r.status!=='approved'&&r.stages?.adapt?.status==='done')?`<button class="btn ok" data-act="approve"><i data-lucide="check"></i>ผ่าน ลงเทมเพลต</button>`:''}
+        <button class="btn del" data-act="delete" style="margin-left:auto"><i data-lucide="trash-2"></i>ลบงานนี้</button>
       </div>${liveLine(r)}${redoBanner}</div>
     ${STAGES.map(([k,label,ic]) => stageHtml(r, k, label, ic, st[k]||{status:'todo'})).join('')}
     ${(r.log||[]).length?`<div class="log"><div class="eyebrow">ประวัติการสั่ง</div><ul>${[...r.log].reverse().map(l=>`<li><b>${esc(stageLabel(l.stage))}</b> · ${esc(l.note||'')}${l.pick!=null?` · ใช้ #${l.pick}`:''} — ${esc((l.by||'').split('@')[0])} ${esc(l.at?new Date(l.at).toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'')}</li>`).join('')}</ul></div>`:''}`;
@@ -224,6 +228,7 @@ function render(){
   det.querySelectorAll('[data-zoom]').forEach(i => i.onclick = () => zoom(i.dataset.zoom));
   det.querySelectorAll('[data-proceed]').forEach(b => b.onclick = () => proceed(r, b.dataset.proceed));
   det.querySelectorAll('[data-act=approve]').forEach(b => b.onclick = () => approve(r));
+  det.querySelectorAll('[data-act=delete]').forEach(b => b.onclick = () => delRun(r, b));
   icons();
 }
 function liveLine(r){
@@ -237,6 +242,31 @@ function liveLine(r){
   return `<div class="note" style="border-color:#244a74;background:#0f1b2b"><b style="color:var(--run)">กำลังทำ${cur?' "'+cur[1]+'"':''}${p!=null?' '+p+'%':''}</b> · อัปเดตล่าสุด ${sec(L.at)}ที่แล้ว${L.started?' · ทำมาแล้ว '+sec(L.started):''}</div>`;
 }
 setInterval(()=>{ if(!typing()) render(); },10000);
+// "ผ่าน ไปขั้นถัดไป" (Champ 2026-10-14): any stage that has a result and whose next stage hasn't started yet.
+// review → next is template, so it uses approve(); every other stage marks itself done and the worker continues.
+function nextBtn(r, k, s){
+  const i = STAGES.findIndex(x=>x[0]===k), nxt = STAGES[i+1];
+  if (!nxt || r.status==='approved') return '';
+  if (!['waiting','done'].includes(s.status)) return '';
+  const ns = r.stages?.[nxt[0]]?.status || 'todo';
+  if (!['todo','stale'].includes(ns)) return '';
+  if (['new','redo','queued','continue','running'].includes(r.status)) return '';
+  const act = k==='review' ? 'data-act="approve"' : `data-proceed="${k}"`;
+  const lead = s.status==='waiting' ? '<b>รอดูก่อนไปต่อ</b> — ดีแล้วกดผ่าน ถ้ายังไม่ดีพิมพ์บอกด้านล่าง หรือพังเกินไปกด "ลบงานนี้" ด้านบน' : '<b>ขั้นนี้เสร็จแล้ว</b> — ดีแล้วกดผ่านไปขั้นถัดไป';
+  return `<div class="note">${lead}<div class="row" style="margin-top:8px"><button class="btn ok" ${act}><i data-lucide="arrow-right"></i>ผ่าน ไปขั้นถัดไป</button></div></div>`;
+}
+// ลบงาน: two taps (no browser confirm dialog), soft delete status 'deleted' so the worker skips it, undo from the toast.
+async function delRun(r, b){
+  if (!b.classList.contains('arm')) { b.classList.add('arm'); b.innerHTML='แตะอีกครั้งเพื่อลบ'; setTimeout(()=>{ if(b.isConnected){ b.classList.remove('arm'); b.innerHTML='<i data-lucide="trash-2"></i>ลบงานนี้'; icons(); } },4000); return; }
+  const prev = r.status;
+  try {
+    await updateDoc(doc(db,'poster-dojo',r.id), { status:'deleted', prev_status:prev, deleted_by:ME, deleted_at:serverTimestamp(), log:arrayUnion({stage:'ref',note:'ลบงานนี้',by:ME,at:Date.now()}), updated_at:serverTimestamp() });
+    CUR = null;
+    const t=document.createElement('div'); t.className='toast'; t.innerHTML='ลบงานแล้ว <button style="margin-left:10px;text-decoration:underline;color:var(--gold)">เอากลับมา</button>';
+    t.querySelector('button').onclick = async () => { await updateDoc(doc(db,'poster-dojo',r.id), { status:prev, updated_at:serverTimestamp() }); CUR=r.id; t.remove(); toast('เอากลับมาแล้ว'); };
+    document.body.appendChild(t); setTimeout(()=>t.remove(),8000);
+  } catch(e){ toast('ลบไม่ได้: '+(e.code||e.message)); }
+}
 const stageLabel = k => (STAGES.find(s=>s[0]===k)||[k,k])[1];
 
 function stageHtml(r, k, label, ic, s){
@@ -259,7 +289,7 @@ function stageHtml(r, k, label, ic, s){
       ${items?`<div class="imgs">${items}</div>`:''}
       ${cands?`<div class="eyebrow" style="margin-top:14px">ตัวเลือก ref · "ใช้อันนี้แทน" = ทำงานนี้ใหม่จากรูปนั้น · "แยกเป็นงานใหม่" = ทำอีกชิ้นคู่กันไป งานนี้ไม่เปลี่ยน</div><div class="cands">${cands}</div>`:''}
       ${links?`<div class="links">${links}</div>`:''}
-      ${(s.status==='waiting'&&k!=='review'&&r.status!=='approved')?`<div class="note"><b>รอดูก่อนไปต่อ</b> — ถ้าเหมือนต้นแบบแล้วกดไปต่อ ถ้ายังไม่เหมือนพิมพ์บอกด้านล่าง<div class="row" style="margin-top:8px"><button class="btn ok" data-proceed="${k}"><i data-lucide="check"></i>เหมือนแล้ว ไปขั้นต่อไป</button></div></div>`:''}
+      ${nextBtn(r, k, s)}
       ${canFix?`<div class="fix"><textarea data-stage="${k}" placeholder="บอก Claude ว่าขั้นนี้ผิดตรงไหน หรือต้องเป็นแบบไหน">${esc(drafts[r.id+'/'+k]||'')}</textarea>
         <div class="row"><button class="btn pri" data-redo="${k}"><i data-lucide="rotate-ccw"></i>แก้ขั้นนี้ แล้วทำต่อจากตรงนี้</button></div></div>`:''}
     </div>`:''}
