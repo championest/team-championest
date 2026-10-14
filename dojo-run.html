@@ -216,7 +216,7 @@ function render(){
       <h2>${esc(r.title||r.name)}</h2>
       <p>${r.brief?.query?'คำค้น: '+esc(r.brief.query):''}${r.brief?.note?' · '+esc(r.brief.note):''}</p>
       <div class="headrow"><span class="chip ${esc(r.status)}">${esc(STATUS_TH[r.status]||r.status)}</span>
-        ${(r.status!=='approved'&&r.stages?.adapt?.status==='done')?`<button class="btn ok" data-act="approve"><i data-lucide="check"></i>ผ่าน ลงเทมเพลต</button>`:''}
+        ${(r.status!=='approved'&&r.stages?.adapt?.status==='done')?`<button class="btn ok" data-act="approve"><i data-lucide="check"></i>อนุมัติ · ผ่านเลย</button>`:''}
         <button class="btn del" data-act="delete" style="margin-left:auto"><i data-lucide="trash-2"></i>ลบงานนี้</button>
       </div>${liveLine(r)}${redoBanner}</div>
     ${STAGES.map(([k,label,ic]) => stageHtml(r, k, label, ic, st[k]||{status:'todo'})).join('')}
@@ -251,9 +251,14 @@ function nextBtn(r, k, s){
   const ns = r.stages?.[nxt[0]]?.status || 'todo';
   if (!['todo','stale'].includes(ns)) return '';
   if (['new','redo','queued','continue','running'].includes(r.status)) return '';
-  const act = k==='review' ? 'data-act="approve"' : `data-proceed="${k}"`;
-  const lead = s.status==='waiting' ? '<b>รอดูก่อนไปต่อ</b> — ดีแล้วกดผ่าน ถ้ายังไม่ดีพิมพ์บอกด้านล่าง หรือพังเกินไปกด "ลบงานนี้" ด้านบน' : '<b>ขั้นนี้เสร็จแล้ว</b> — ดีแล้วกดผ่านไปขั้นถัดไป';
-  return `<div class="note">${lead}<div class="row" style="margin-top:8px"><button class="btn ok" ${act}><i data-lucide="arrow-right"></i>ผ่าน ไปขั้นถัดไป</button></div></div>`;
+  const isReview = k==='review';
+  const act = isReview ? 'data-act="approve"' : `data-proceed="${k}"`;
+  const lead = isReview
+    ? '<b>โพสต์เสร็จแล้ว — ถ้าโอเค กดปุ่มเขียวด้านล่างเพื่ออนุมัติได้เลย</b><br><small style="color:var(--mute)">ยังไม่โอเค? พิมพ์บอกในช่องด้านล่าง แล้วกด "แก้ขั้นนี้"</small>'
+    : (s.status==='waiting' ? '<b>รอดูก่อนไปต่อ</b> — ดีแล้วกดผ่าน ถ้ายังไม่ดีพิมพ์บอกด้านล่าง หรือพังเกินไปกด "ลบงานนี้" ด้านบน' : '<b>ขั้นนี้เสร็จแล้ว</b> — ดีแล้วกดผ่านไปขั้นถัดไป');
+  const label = isReview ? 'อนุมัติ — ใช้โพสต์นี้เลย' : 'ผ่าน ไปขั้นถัดไป';
+  const big = isReview ? ' style="width:100%;justify-content:center;min-height:52px;font-size:16px;font-weight:600"' : '';
+  return `<div class="note"${isReview?' style="border-color:#1f5a40;background:#0f2419"':''}>${lead}<div class="row" style="margin-top:8px"><button class="btn ok"${big} ${act}><i data-lucide="check"></i>${label}</button></div></div>`;
 }
 // ลบงาน: two taps (no browser confirm dialog), soft delete status 'deleted' so the worker skips it, undo from the toast.
 async function delRun(r, b){
